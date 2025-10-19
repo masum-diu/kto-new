@@ -18,13 +18,15 @@ const HomeScreen = () => {
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* Header */}
         <View style={styles.header}>
-          <Image source={require("../../assets/Settings.png")}
-            style={styles.headerIcon} />
+          <TouchableOpacity onPress={() => navigation.navigate("settingscreen")}> 
+            <Image source={require("../../assets/Settings.png")}
+            style={styles.headerIcon} /></TouchableOpacity>
           <TouchableOpacity style={styles.familyBtn}>
             <Text style={styles.familyText}>Demo Family</Text>
             <Image source={require("../../assets/ions1.png")} style={styles.headerSmallIcon} />
           </TouchableOpacity>
-          <Image source={require("../../assets/Chat.png")} style={styles.headerIcon} />
+           <TouchableOpacity onPress={() => navigation.navigate("NotificationScreen")}> 
+            <Image source={require("../../assets/Chat.png")} style={styles.headerIcon} /></TouchableOpacity>
         </View>
 
         {/* Profile Card */}
