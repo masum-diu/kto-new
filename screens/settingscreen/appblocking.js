@@ -27,7 +27,7 @@ const appBlockingData = [
   { id: '5', app: 'Facebook', isBlocked: false },
 ];
 
-export default function UsageReport() {
+export default function appblocking() {
   const navigation = useNavigation();
   const [blockedApps, setBlockedApps] = useState(appBlockingData);
 
@@ -48,45 +48,28 @@ export default function UsageReport() {
             resizeMode="contain"
           />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Usage Report</Text>
+        <Text style={styles.headerTitle}>App Blocking</Text>
         <View style={{ width: 24 }} /> {/* Placeholder for alignment */}
       </View>
 
       {/* List */}
       <ScrollView contentContainerStyle={styles.listContainer}>
-        {/* Screen Usage Time Section */}
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>Screen Usage Time</Text>
-          <Text style={styles.cardSubtitle}>This Week's Average: 4h 15m / day</Text>
-          <View style={styles.barChartContainer}>
-            {weeklyData.map(item => (
-              <View key={item.id} style={styles.barWrapper}>
-                <View style={styles.bar}>
-                  <View style={[styles.barFill, { height: `${item.percentage}%` }]} />
-                </View>
-                <Text style={styles.barLabel}>{item.day}</Text>
-              </View>
-            ))}
-          </View>
-        </View>
 
-        {/* App Usage Time Section */}
+        {/* App Blocking Section */}
         <View style={styles.card}>
-          <Text style={styles.cardTitle}>App Usage Time</Text>
-          <Text style={styles.cardSubtitle}>Today's Screen Time: 3h 50m</Text>
-          {dailyData.map(item => (
-            <View key={item.id} style={styles.usageRow}>
+          <Text style={styles.cardTitle}>App Blocking</Text>
+          {blockedApps.map(item => (
+            <View key={item.id} style={styles.blockingRow}>
               <Text style={styles.appName}>{item.app}</Text>
-              <View style={styles.progressBarContainer}>
-                <View style={[styles.progressBar, { width: `${item.percentage}%`, backgroundColor: item.color }]} />
-              </View>
-              <Text style={styles.appTime}>{item.time}</Text>
+              <Switch
+                trackColor={{ false: "#767577", true: "#9b59b6" }}
+                thumbColor={item.isBlocked ? "#f5dd4b" : "#f4f3f4"}
+                onValueChange={() => toggleSwitch(item.id)}
+                value={item.isBlocked}
+              />
             </View>
           ))}
         </View>
-
-        {/* App Blocking Section */}
-       
       </ScrollView>
     </View>
   );

@@ -59,7 +59,7 @@ export default function notifications() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#D6A3F6", // light purple background
+    backgroundColor: "#f0e6f7",
   },
   //  backButton: {
   //   position: "absolute",

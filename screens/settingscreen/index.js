@@ -47,11 +47,11 @@ const SettingsScreen = () => {
                     <Text style={styles.optionBadge}>1</Text>
                 </TouchableOpacity>
 
-                <TouchableOpacity style={styles.optionCard}>
+                <TouchableOpacity style={styles.optionCard} onPress={() => navigation.navigate("UsageReport")}>
                     <Text style={styles.optionText}>Usage Report</Text>
                 </TouchableOpacity>
 
-                <TouchableOpacity style={styles.optionCard}>
+                <TouchableOpacity style={styles.optionCard} onPress={() => navigation.navigate("Appblocking")}>
                     <Text style={styles.optionText}>App Blocking</Text>
                 </TouchableOpacity>
 
@@ -84,7 +84,7 @@ export default SettingsScreen;
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: "#D6A3F6", // light purple
+ backgroundColor: "#f0e6f7", // light purple
     },
     header: {
         padding: 20,

@@ -82,7 +82,7 @@ export default function chat() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fff",
+    backgroundColor: "#f0e6f7",
   },
   backIcon: { width: 35, height: 35 },
   headerPlaceholder: { width: 24 },
@@ -107,7 +107,7 @@ const styles = StyleSheet.create({
   card: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#fff",
+    // backgroundColor: "#fff",
     padding: 15,
     borderRadius: 12,
     marginBottom: 15,
