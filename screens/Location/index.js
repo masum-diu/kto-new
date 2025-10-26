@@ -1,19 +1,12 @@
 import React, { useEffect, useState } from "react";
-import {
-  View,
-  Text,
-  Button,
-  StyleSheet,
-  PermissionsAndroid,
-  Platform,
-} from "react-native";
+import { View, Text, StyleSheet, PermissionsAndroid, Platform, ActivityIndicator } from "react-native";
 import Geolocation from "@react-native-community/geolocation";
+import MapView, { Marker, PROVIDER_GOOGLE } from "react-native-maps";
 
-const location = () => {
+const LocationScreen = () => {
   const [location, setLocation] = useState(null);
   const [errorMsg, setErrorMsg] = useState(null);
 
-  // Request location permission for Android
   const requestLocationPermission = async () => {
     if (Platform.OS === "ios") {
       getCurrentLocation();
@@ -60,45 +53,55 @@ const location = () => {
     requestLocationPermission();
   }, []);
 
+  if (!location && !errorMsg) {
+    return (
+      <View style={styles.loader}>
+        <ActivityIndicator size="large" color="#0000ff" />
+        <Text>Fetching current location...</Text>
+      </View>
+    );
+  }
+
+  if (errorMsg) {
+    return (
+      <View style={styles.loader}>
+        <Text style={{ color: "red" }}>{errorMsg}</Text>
+      </View>
+    );
+  }
+
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>📍 Current Location</Text>
-
-      {errorMsg ? (
-        <Text style={styles.error}>{errorMsg}</Text>
-      ) : location ? (
-        <>
-          <Text style={styles.text}>Latitude: {location.latitude}</Text>
-          <Text style={styles.text}>Longitude: {location.longitude}</Text>
-        </>
-      ) : (
-        <Text style={styles.text}>Fetching location...</Text>
-      )}
-
-      <Button title="Refresh Location" onPress={getCurrentLocation} />
-    </View>
+    <MapView
+      provider={PROVIDER_GOOGLE}
+      style={styles.map}
+      showsUserLocation={true}
+      region={{
+        latitude: location.latitude,
+        longitude: location.longitude,
+        latitudeDelta: 0.01,
+        longitudeDelta: 0.01,
+      }}
+    >
+      <Marker
+        coordinate={{
+          latitude: location.latitude,
+          longitude: location.longitude,
+        }}
+        title="You are here"
+      />
+    </MapView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
+  map: {
     flex: 1,
-    alignItems: "center",
+  },
+  loader: {
+    flex: 1,
     justifyContent: "center",
-    backgroundColor: "#fff",
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: "600",
-    marginBottom: 20,
-  },
-  text: {
-    fontSize: 16,
-    marginVertical: 4,
-  },
-  error: {
-    color: "red",
+    alignItems: "center",
   },
 });
 
-export default location;
+export default LocationScreen;

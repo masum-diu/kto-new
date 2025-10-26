@@ -1914,6 +1914,11 @@
   dependencies:
     "@babel/types" "^7.28.2"
 
+"@types/geojson@^7946.0.13":
+  "integrity" "sha512-6C8nqWur3j98U6+lXDfTUWIfgvZU+EumvpHKcYjujKH7woYyLj2sUmff0tRhrqM7BohUw7Pz3ZB1jj2gW9Fvmg=="
+  "resolved" "https://registry.npmjs.org/@types/geojson/-/geojson-7946.0.16.tgz"
+  "version" "7946.0.16"
+
 "@types/graceful-fs@^4.1.3":
   "integrity" "sha512-olP3sd1qOEe5dXTSaFvQG+02VdRXcdytWLAZsAq1PecU8uqQAhkrnbli7DagjtXKW/Bl7YJbUsa8MPcuc8LHEQ=="
   "resolved" "https://registry.npmjs.org/@types/graceful-fs/-/graceful-fs-4.1.9.tgz"
@@ -5973,6 +5978,13 @@
   "resolved" "https://registry.npmjs.org/react-native-linear-gradient/-/react-native-linear-gradient-2.8.3.tgz"
   "version" "2.8.3"
 
+"react-native-maps@^1.26.18":
+  "integrity" "sha512-aJeczgR2Y5AeAazod3QAIkpAqNteYjKlZUH8YRKueaORsjdDbGryD/4aPL8UR4J6bjsSJK8lgzoMCvCky6FRpA=="
+  "resolved" "https://registry.npmjs.org/react-native-maps/-/react-native-maps-1.26.18.tgz"
+  "version" "1.26.18"
+  dependencies:
+    "@types/geojson" "^7946.0.13"
+
 "react-native-parsed-text@^0.0.22":
   "integrity" "sha512-hfD83RDXZf9Fvth3DowR7j65fMnlqM9PpxZBGWkzVcUTFtqe6/yPcIoIAgrJbKn6YmtzkivmhWE2MCE4JKBXrQ=="
   "resolved" "https://registry.npmjs.org/react-native-parsed-text/-/react-native-parsed-text-0.0.22.tgz"
@@ -6027,7 +6039,7 @@
     "convert-source-map" "^2.0.0"
     "semver" "7.7.2"
 
-"react-native@*", "react-native@>=0.42.0", "react-native@>=0.61.0", "react-native@0.81.1":
+"react-native@*", "react-native@>= 0.76.0", "react-native@>=0.42.0", "react-native@>=0.61.0", "react-native@0.81.1":
   "integrity" "sha512-k2QJzWc/CUOwaakmD1SXa4uJaLcwB2g2V9BauNIjgtXYYAeyFjx9jlNz/+wAEcHLg9bH5mgMdeAwzvXqjjh9Hg=="
   "resolved" "https://registry.npmjs.org/react-native/-/react-native-0.81.1.tgz"
   "version" "0.81.1"
@@ -6080,7 +6092,7 @@
     "react-is" "^19.1.0"
     "scheduler" "^0.26.0"
 
-"react@*", "react@^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0", "react@^19.1.0", "react@>= 18.2.0", "react@>=16.8", "react@>=16.8.0", "react@>=17.0.0", "react@>=18.0.0", "react@19.1.0":
+"react@*", "react@^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0", "react@^19.1.0", "react@>= 18.2.0", "react@>= 18.3.1", "react@>=16.8", "react@>=16.8.0", "react@>=17.0.0", "react@>=18.0.0", "react@19.1.0":
   "integrity" "sha512-FS+XFBNvn3GTAWq26joslQgWNoFu08F4kl0J4CgdNKADkdSGXQyTCnKteIAJy96Br6YbpEU1LSzV5dYtjMkMDg=="
   "resolved" "https://registry.npmjs.org/react/-/react-19.1.0.tgz"
   "version" "19.1.0"
