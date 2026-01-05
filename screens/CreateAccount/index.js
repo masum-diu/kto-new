@@ -4,7 +4,7 @@ import { useNavigation } from '@react-navigation/native';
 
 const CreateAccount = () => {
   const [name, setName] = useState('');
-  const [password, setPassword] = useState('');
+  const [familyName, setFamilyName] = useState('');
   const [number, setNumber] = useState('');
   const { width, height } = Dimensions.get("window");
   const navigation = useNavigation();
@@ -54,12 +54,11 @@ const CreateAccount = () => {
 
       {/* Password */}
       <View style={styles.inputWrapper}>
-        <Text style={styles.label}>Password</Text>
+        <Text style={styles.label}>Family name</Text>
         <TextInput
-          placeholder="Enter your password"
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry
+          placeholder="Enter your family name"
+          value={familyName}
+          onChangeText={setFamilyName}
           style={styles.input}
         />
       </View>

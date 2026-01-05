@@ -1,19 +1,46 @@
 import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
 import React, { useState } from 'react';
 import { useNavigation } from '@react-navigation/native';
-
+import instance from '../../api/api_instance';
 const AuthScreen = () => {
   const [isSignIn, setIsSignIn] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const navigation = useNavigation();
-
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (isSignIn) {
-      navigation.navigate("Verification");
+      try {
+        const response = await instance.post('/users/login', {
+          email,
+          password,
+        });
+        console.log('Sign In Successful:', response.data);
+        navigation.navigate("CreateAccount");
+        // Navigate to the next screen or perform other actions
+      } catch (error) {
+        console.error('Sign In Error:', error.response ? error.response.data : error.message);
+      }
     } else {
-      // console.log("Sign Up with:", email, password);
+      try {
+        const response = await instance.post('/users/register', {
+          email,
+          password,
+        });
+        console.log('Sign Up Successful:', response.data);
+        const emailToSend = response?.data?.email || email; // fallback to entered email
+        navigation.navigate('Verification', { email: emailToSend });
+
+        // Navigate to the next screen or perform other actions
+      } catch (error) {
+        console.error('Sign Up Error:', error.response ? error.response.data : error.message);
+      }
     }
+
+    // if (isSignIn) {
+    //   // navigation.navigate("Verification");
+    // } else {
+    //   // console.log("Sign Up with:", email, password);
+    // }
   };
 
   return (

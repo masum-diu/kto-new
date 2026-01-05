@@ -1,8 +1,10 @@
 import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigation } from '@react-navigation/native';
+import instance from '../../api/api_instance';
 
-const Verification = () => {
+const Verification = ({ route }) => {
+   const email = route?.params?.email;
   const [code, setCode] = useState(['', '', '', '']);
   const inputsRef = useRef([]);
   const [timer, setTimer] = useState(300); // 5 minutes in seconds
@@ -46,9 +48,20 @@ const Verification = () => {
     }
   };
 
-  const handleVerify = () => {
-    console.log('Code entered:', code.join(''));
-    navigation.navigate("CreateAccount");
+  const handleVerify = async() => {
+   try {
+        const response = await instance.post('/users/verify-otp', {
+          email,
+          otp: code.join(''),
+        });
+        console.log('Verification Successful:', response.data);
+        navigation.navigate("CreateAccount");
+
+        // Navigate to the next screen or perform other actions
+      } catch (error) {
+        console.error('Verification Error:', error.response ? error.response.data : error.message);
+      }
+    // 
   };
 
   const handleResend = () => {
@@ -82,7 +95,7 @@ const Verification = () => {
       <Text style={styles.subHeader}>Verify your email address</Text>
       <Text style={styles.description}>
         We have sent you 4-digit verification code at{"\n"}
-        <Text style={styles.email}>dummy@gmail.com</Text>
+        <Text style={styles.email}>{email}</Text>
       </Text>
 
       <TouchableOpacity disabled={!resendActive} onPress={handleResend}>

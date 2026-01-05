@@ -26,7 +26,7 @@ export default function App() {
     <SafeAreaProvider>
       <NavigationContainer>
         <Stack.Navigator screenOptions={{ headerShown: false }}>
-          {/* <Stack.Screen name="Onboarding" component={Onboarding} />
+          <Stack.Screen name="Onboarding" component={Onboarding} />
           <Stack.Screen name="WhoseDevices" component={WhoseDevices} />
           <Stack.Screen name="Auth" component={AuthScreen} />
           <Stack.Screen name="Verification" component={Verification} />
@@ -34,7 +34,7 @@ export default function App() {
            <Stack.Screen name="CreateFamily" component={CreateFamily} />
             <Stack.Screen name="CircleCode" component={CircleCode} />
              <Stack.Screen name="KidsProfileSetup" component={KidsProfileSetup} />
-             <Stack.Screen name="Monitor" component={Monitor} /> */}
+             <Stack.Screen name="Monitor" component={Monitor} />
              <Stack.Screen name="MainHome" component={BottomNavigation} />
              <Stack.Screen name="RemoteCameraView" component={RemoteCamera} />
              <Stack.Screen name="ScreenMirroring" component={ScreenMirroring} /> 
