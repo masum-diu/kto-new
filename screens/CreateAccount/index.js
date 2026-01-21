@@ -1,6 +1,8 @@
 import { View, Text, TextInput, TouchableOpacity, Image, Dimensions, ScrollView, StyleSheet } from 'react-native';
 import React, { useState } from 'react';
 import { useNavigation } from '@react-navigation/native';
+import instance from '../../api/api_instance';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const CreateAccount = () => {
   const [name, setName] = useState('');
@@ -9,12 +11,32 @@ const CreateAccount = () => {
   const { width, height } = Dimensions.get("window");
   const navigation = useNavigation();
 
-  const handleSave = () => {
-    navigation.navigate("CreateFamily");
+  const handleSave = async () => {
+    try {
+      const storedToken = await AsyncStorage.getItem('accessToken');
+      const response = await instance.patch('/users/me', {
+        name,
+        familyName,
+        number,
+      }, {
+        headers: {
+          Authorization: `Bearer ${storedToken}`,
+          "Content-Type": "application/json",
+
+        },
+
+      });
+       console.log('Verification Successful:', response.data);
+      navigation.navigate("CircleCode");
+
+      // Navigate to the next screen or perform other actions
+    } catch (error) {
+      console.error('Verification Error:', error.response ? error.response.data : error.message);
+    }
   };
 
   return (
-    <ScrollView 
+    <ScrollView
       contentContainerStyle={styles.container}
       showsVerticalScrollIndicator={false}
     >

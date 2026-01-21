@@ -1,7 +1,9 @@
-import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet,} from 'react-native';
 import React, { useState } from 'react';
 import { useNavigation } from '@react-navigation/native';
 import instance from '../../api/api_instance';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
 const AuthScreen = () => {
   const [isSignIn, setIsSignIn] = useState(true);
   const [email, setEmail] = useState('');
@@ -14,8 +16,12 @@ const AuthScreen = () => {
           email,
           password,
         });
-        console.log('Sign In Successful:', response.data);
-        navigation.navigate("CreateAccount");
+        console.log('Sign In Successful:', response?.data?.data?.user?.familyId);
+        const accessToken = response?.data?.data?.accessToken;
+        await AsyncStorage.setItem('accessToken', accessToken);
+        const familyId = response?.data?.data?.user?.familyId;
+        navigation.navigate("MainHome", { familyId });
+        
         // Navigate to the next screen or perform other actions
       } catch (error) {
         console.error('Sign In Error:', error.response ? error.response.data : error.message);

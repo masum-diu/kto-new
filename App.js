@@ -19,33 +19,41 @@ import settingscreen from "./screens/settingscreen/index";
 import chat from "./screens/settingscreen/chat";
 import UsageReport from "./screens/settingscreen/usagesReport";
 import Appblocking from "./screens/settingscreen/appblocking";
-
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useState } from "react";
 const Stack = createNativeStackNavigator();
 export default function App() {
+  const [accessToken, setAccessToken] = useState(null);
+  AsyncStorage.getItem("accessToken").then((value) => {
+    setAccessToken(value);
+    console.log("Stored Access Token:", value);
+  });
   return (
     <SafeAreaProvider>
       <NavigationContainer>
         <Stack.Navigator screenOptions={{ headerShown: false }}>
-          <Stack.Screen name="Onboarding" component={Onboarding} />
+          {!accessToken ? (
+            <Stack.Screen name="Onboarding" component={Onboarding} />
+          ) : null}
           <Stack.Screen name="WhoseDevices" component={WhoseDevices} />
           <Stack.Screen name="Auth" component={AuthScreen} />
           <Stack.Screen name="Verification" component={Verification} />
           <Stack.Screen name="CreateAccount" component={CreateAccount} />
-           <Stack.Screen name="CreateFamily" component={CreateFamily} />
-            <Stack.Screen name="CircleCode" component={CircleCode} />
-             <Stack.Screen name="KidsProfileSetup" component={KidsProfileSetup} />
-             <Stack.Screen name="Monitor" component={Monitor} />
-             <Stack.Screen name="MainHome" component={BottomNavigation} />
-             <Stack.Screen name="RemoteCameraView" component={RemoteCamera} />
-             <Stack.Screen name="ScreenMirroring" component={ScreenMirroring} /> 
-             <Stack.Screen name="OneWayAudio" component={OneWayAudio} />
-             <Stack.Screen name="NotificationScreen" component={notifications} />
-             <Stack.Screen name="settingscreen" component={settingscreen} />
-             <Stack.Screen name="chatScreen" component={chat} />
-             <Stack.Screen name="UsageReport" component={UsageReport} />
-             <Stack.Screen name="Appblocking" component={Appblocking} />
+          {/* <Stack.Screen name="CreateFamily" component={CreateFamily} /> */}
+          <Stack.Screen name="CircleCode" component={CircleCode} />
+          <Stack.Screen name="KidsProfileSetup" component={KidsProfileSetup} />
+          <Stack.Screen name="Monitor" component={Monitor} />
+          <Stack.Screen name="MainHome" component={BottomNavigation} />
+          <Stack.Screen name="RemoteCameraView" component={RemoteCamera} />
+          <Stack.Screen name="ScreenMirroring" component={ScreenMirroring} />
+          <Stack.Screen name="OneWayAudio" component={OneWayAudio} />
+          <Stack.Screen name="NotificationScreen" component={notifications} />
+          <Stack.Screen name="settingscreen" component={settingscreen} />
+          <Stack.Screen name="chatScreen" component={chat} />
+          <Stack.Screen name="UsageReport" component={UsageReport} />
+          <Stack.Screen name="Appblocking" component={Appblocking} />
 
-            
+
         </Stack.Navigator>
       </NavigationContainer>
     </SafeAreaProvider>

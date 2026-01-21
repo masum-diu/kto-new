@@ -37,6 +37,10 @@ const SettingsScreen = () => {
                     <Text style={styles.optionText}>My Device</Text>
                     <Text style={styles.optionBadge}>1</Text>
                 </TouchableOpacity>
+                <TouchableOpacity style={styles.optionCard} onPress={() => navigation.navigate("CircleCode")}>
+                    <Text style={styles.optionText}>Add Device</Text>
+                    <Text style={styles.optionBadge}>1</Text>
+                </TouchableOpacity>
 
                 <TouchableOpacity style={styles.optionCard} onPress={() => navigation.navigate("chatScreen")}>
                     <Text style={styles.optionText}>Chat</Text>

@@ -1,16 +1,41 @@
 import { View, Text, Image, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useNavigation } from '@react-navigation/native';
+import instance from '../../api/api_instance';
 
-const CircleCode = () => {
+const CircleCode = ({ route }) => {
   const navigation = useNavigation();
+  const familyId = route.params?.familyId;
+  const [id, setId] = React.useState(null);
+  console.log(familyId)
+  const handleGenerateCode = async () => {
+  try {
+    const response = await instance.post('/devices/generate-code', {
+      familyId,
+    });
+    console.log(response);
+    const trackId = response?.data?.data?.trackId;
+      setId(trackId);
+    
 
-  const handleSave = () => {
-    navigation.navigate("KidsProfileSetup");
+  } catch (error) {
+    console.error('Family Code Generation Error:', error.response ? error.response.data : error.message);
+  }
   };
+  const getqurCode = async () => {
+    try {
+      const response = await instance.get('/children/app-download-qr/image');
+      console.log('QR Code Retrieved:', response);
+    } catch (error) {
+      console.error('QR Code Retrieval Error:', error.response ? error.response.data : error.message);
+    }
+  };
+  useEffect(() => {
+    getqurCode();
+  }, []);
 
   return (
-    <ScrollView 
+    <ScrollView
       contentContainerStyle={styles.container}
       showsVerticalScrollIndicator={false}
     >
@@ -27,13 +52,13 @@ const CircleCode = () => {
               resizeMode="contain"
             />
             <View style={styles.codeBox}>
-              <Text style={styles.codeText}>NtX-501975BspQ</Text>
+              <Text style={styles.codeText}>{id}</Text>
             </View>
           </View>
         </View>
 
         {/* Submit Button */}
-        <TouchableOpacity onPress={handleSave} style={styles.button}>
+        <TouchableOpacity onPress={handleGenerateCode} style={styles.button}>
           <Text style={styles.buttonText}>Save</Text>
         </TouchableOpacity>
       </View>
