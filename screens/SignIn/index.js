@@ -16,7 +16,7 @@ const AuthScreen = () => {
           email,
           password,
         });
-        console.log('Sign In Successful:', response?.data?.data?.user?.familyId);
+        // console.log('Sign In Successful:', response?.data?.data?.user?.familyId);
         const accessToken = response?.data?.data?.accessToken;
         await AsyncStorage.setItem('accessToken', accessToken);
         const familyId = response?.data?.data?.user?.familyId;
@@ -24,21 +24,21 @@ const AuthScreen = () => {
         
         // Navigate to the next screen or perform other actions
       } catch (error) {
-        console.error('Sign In Error:', error.response ? error.response.data : error.message);
+        // console.error('Sign In Error:', error.response ? error.response.data : error.message);
       }
     } else {
       try {
         const response = await instance.post('/users/register', {
           email,
-          password,
+          password, 
         });
-        console.log('Sign Up Successful:', response.data);
+         console.log('Sign Up Successful:', response.data);
         const emailToSend = response?.data?.email || email; // fallback to entered email
         navigation.navigate('Verification', { email: emailToSend });
 
         // Navigate to the next screen or perform other actions
       } catch (error) {
-        console.error('Sign Up Error:', error.response ? error.response.data : error.message);
+         
       }
     }
 

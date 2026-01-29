@@ -9,25 +9,25 @@ const CircleCode = ({ route }) => {
   const [id, setId] = React.useState(null);
   console.log(familyId)
   const handleGenerateCode = async () => {
-  try {
-    const response = await instance.post('/devices/generate-code', {
-      familyId,
-    });
-    console.log(response);
-    const trackId = response?.data?.data?.trackId;
+    try {
+      const response = await instance.post('/devices/generate-code', {
+        familyId,
+      });
+      // console.log(response);
+      const trackId = response?.data?.data?.trackId;
       setId(trackId);
-    
 
-  } catch (error) {
-    console.error('Family Code Generation Error:', error.response ? error.response.data : error.message);
-  }
+
+    } catch (error) {
+      // console.error('Family Code Generation Error:', error.response ? error.response.data : error.message);
+    }
   };
   const getqurCode = async () => {
     try {
       const response = await instance.get('/children/app-download-qr/image');
-      console.log('QR Code Retrieved:', response);
+      // console.log('QR Code Retrieved:', response);
     } catch (error) {
-      console.error('QR Code Retrieval Error:', error.response ? error.response.data : error.message);
+      // console.error('QR Code Retrieval Error:', error.response ? error.response.data : error.message);
     }
   };
   useEffect(() => {
@@ -40,7 +40,18 @@ const CircleCode = ({ route }) => {
       showsVerticalScrollIndicator={false}
     >
       <View>
-        <Text style={styles.title}>Add new device</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center',justifyContent:"space-between", marginBottom: 32 }}>
+          <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+            <Image
+              source={require("../../assets/angle-small-left.png")}
+              style={{ width: 35, height: 35 }}
+              resizeMode="contain"
+            />
+          </TouchableOpacity>
+          <Text style={styles.title}>Add new device</Text>
+           <View style={{ width: 24 }} />
+        </View>
+
 
         {/* Bind child’s device */}
         <View style={styles.section}>
@@ -59,7 +70,7 @@ const CircleCode = ({ route }) => {
 
         {/* Submit Button */}
         <TouchableOpacity onPress={handleGenerateCode} style={styles.button}>
-          <Text style={styles.buttonText}>Save</Text>
+          {<Text style={styles.buttonText}>Reload</Text>}
         </TouchableOpacity>
       </View>
     </ScrollView>

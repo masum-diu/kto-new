@@ -1,9 +1,37 @@
 import { useNavigation } from "@react-navigation/native";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { View, Text, StyleSheet, Image, TouchableOpacity, ScrollView } from "react-native";
+import instance from "../../api/api_instance";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const SettingsScreen = () => {
-      const navigation = useNavigation();
+    const navigation = useNavigation();
+    const [user, setUser] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [familyId, setFamilyId] = useState(null);
+    const getUser = async () => {
+        try {
+            setLoading(true);
+            const storedToken = await AsyncStorage.getItem('accessToken');
+            const response = await instance.get('/users/me', {
+                headers: {
+                    Authorization: `Bearer ${storedToken}`,
+                    "Content-Type": "application/json",
+
+                },
+            });
+            console.log('User Retrieved:', response);
+            setFamilyId(response?.data?.data?.familyId);
+            setUser(response?.data?.data);
+            setLoading(false);
+        } catch (error) {
+            //   console.error('User Retrieval Error:', error.response ? error.response.data : error.message);
+        }
+    };
+    useEffect(() => {
+        getUser();
+    }, []);
+
     return (
         <ScrollView style={styles.container}>
             {/* Header */}
@@ -16,7 +44,7 @@ const SettingsScreen = () => {
                     />
                 </TouchableOpacity>
                 <Text style={styles.headerText}>Settings</Text>
-                 <View style={{ width: 24 }} /> 
+                <View style={{ width: 24 }} />
             </View>
 
             {/* Profile Section */}
@@ -37,8 +65,12 @@ const SettingsScreen = () => {
                     <Text style={styles.optionText}>My Device</Text>
                     <Text style={styles.optionBadge}>1</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.optionCard} onPress={() => navigation.navigate("CircleCode")}>
+                <TouchableOpacity style={styles.optionCard} onPress={() => navigation.navigate("CircleCode", { familyId })}>
                     <Text style={styles.optionText}>Add Device</Text>
+                    <Text style={styles.optionBadge}>1</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.optionCard} onPress={() => navigation.navigate("ConnectedDevice",{ familyId })}>
+                    <Text style={styles.optionText}>Connected Device</Text>
                     <Text style={styles.optionBadge}>1</Text>
                 </TouchableOpacity>
 
@@ -88,7 +120,7 @@ export default SettingsScreen;
 const styles = StyleSheet.create({
     container: {
         flex: 1,
- backgroundColor: "#f0e6f7", // light purple
+        backgroundColor: "#f0e6f7", // light purple
     },
     header: {
         padding: 20,
@@ -96,7 +128,7 @@ const styles = StyleSheet.create({
         flexDirection: "row",
         justifyContent: "space-between",
     },
-   
+
     headerText: {
         fontSize: 22,
         fontWeight: "600",
@@ -109,7 +141,7 @@ const styles = StyleSheet.create({
         margin: 15,
         borderRadius: 12,
         padding: 15,
-        
+
     },
     profileImage: {
         width: 60,

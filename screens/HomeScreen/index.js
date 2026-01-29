@@ -1,5 +1,5 @@
 import { useNavigation } from "@react-navigation/native";
-import React from "react";
+import React, { use, useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -7,25 +7,102 @@ import {
   SafeAreaView,
   ScrollView,
   TouchableOpacity,
-  Image,
+  Image, Modal, FlatList
 } from "react-native";
+import instance from "../../api/api_instance";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+
 
 
 const HomeScreen = () => {
   const navigation = useNavigation();
+  const [visible, setVisible] = useState(false);
+  const [selectedChild, setSelectedChild] = useState(null);
+  const [user, setUser] = useState(null);
+
+  const getuserData = async () => {
+    const token = await AsyncStorage.getItem('accessToken');
+    const user = await instance.get('/users/me', {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      }
+    });
+    setUser(user.data.data);
+  }
+
+  useEffect(() => {
+    getuserData();
+  }, []);
+
+  const requestScreenCapturePermission = async () => {
+  const token = await AsyncStorage.getItem("accessToken");
+  console.log(selectedChild);
+
+  try {
+    const response = await instance.post(
+      "/control/send-command",
+      {
+        trackId: selectedChild,
+        command: "SCREENSHOT",
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    console.log("Command sent:", response.data);
+     navigation.navigate("ScreenMirroring",{selectedChild})
+  } catch (error) {
+    console.error(
+      "Error requesting screen capture permission:",
+      error?.response?.data || error.message
+    );
+  }
+};
+
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* Header */}
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation.navigate("settingscreen")}> 
+          <TouchableOpacity onPress={() => navigation.navigate("settingscreen")}>
             <Image source={require("../../assets/Settings.png")}
-            style={styles.headerIcon} /></TouchableOpacity>
-          <TouchableOpacity style={styles.familyBtn}>
-            <Text style={styles.familyText}>Demo Family</Text>
-            <Image source={require("../../assets/ions1.png")} style={styles.headerSmallIcon} />
+              style={styles.headerIcon} /></TouchableOpacity>
+          <TouchableOpacity style={styles.familyBtn} onPress={() => setVisible(true)}>
+            <Text style={styles.familyText}>{user?.familyName}</Text>
+          
           </TouchableOpacity>
-           <TouchableOpacity onPress={() => navigation.navigate("NotificationScreen")}> 
+          <Modal transparent visible={visible} animationType="fade">
+            <TouchableOpacity
+              style={styles.modalOverlay}
+              onPress={() => setVisible(false)}
+            >
+              <View style={styles.modalBox}>
+                <Text style={{textAlign:"center",fontWeight:"600",fontSize:16}}>Device lists</Text>
+                <FlatList
+                  data={user?.children}
+                  keyExtractor={(item) => item?.id?.toString()}
+                  renderItem={({ item }) => (
+                    <TouchableOpacity
+                      style={styles.item}
+                      onPress={() => {
+                        setSelectedChild(item.child?.trackId);
+                        setVisible(false);
+                      }}
+                    >
+                      <Text style={styles.itemText}>{item.child?.trackId} {"=>"} ({item.child?.deviceBrand})</Text>
+                    </TouchableOpacity>
+                  )}
+                />
+              </View>
+            </TouchableOpacity>
+          </Modal>
+
+          <TouchableOpacity onPress={() => navigation.navigate("NotificationScreen")}>
             <Image source={require("../../assets/Chat.png")} style={styles.headerIcon} /></TouchableOpacity>
         </View>
 
@@ -88,9 +165,9 @@ const HomeScreen = () => {
                 <Image source={require("../../assets/fi_711191.png")} style={styles.iconImg} />
                 <Text style={styles.iconText}>Remote Camera</Text>
               </View>  </TouchableOpacity>
-            <TouchableOpacity onPress={() => navigation.navigate("ScreenMirroring")}> <View style={styles.iconBox}>
+            <TouchableOpacity onPress={() => requestScreenCapturePermission()}> <View style={styles.iconBox}>
               <Image source={require("../../assets/fi_711191.png")} style={styles.iconImg} />
-              <Text style={styles.iconText}>Screen Mirroring</Text>
+              <Text style={styles.iconText}>Screenshot</Text>
             </View></TouchableOpacity>
             <TouchableOpacity onPress={() => navigation.navigate("OneWayAudio")}>
               <View style={styles.iconBox}>
@@ -139,4 +216,25 @@ const styles = StyleSheet.create({
   navBtnActive: { backgroundColor: "#6a1b9a", paddingHorizontal: 18, paddingVertical: 8, borderRadius: 20, flexDirection: "row", alignItems: "center" },
   bottomIcon: { width: 22, height: 22 },
   navTextActive: { color: "#fff", marginLeft: 6, fontSize: 14 },
+  modalOverlay: {
+  flex: 1,
+  backgroundColor: "rgba(0,0,0,0.4)",
+  justifyContent: "center",
+  alignItems: "center",
+},
+modalBox: {
+  width: "80%",
+  backgroundColor: "#fff",
+  borderRadius: 10,
+  padding: 10,
+},
+item: {
+  padding: 12,
+  borderBottomWidth: 1,
+  borderColor: "#eee",
+},
+itemText: {
+  fontSize: 16,
+},
+
 });

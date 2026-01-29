@@ -20,6 +20,9 @@ import chat from "./screens/settingscreen/chat";
 import UsageReport from "./screens/settingscreen/usagesReport";
 import Appblocking from "./screens/settingscreen/appblocking";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import ConnectedDevice from "./screens/settingscreen/connectedDevice";
+import DeviceDetails from "./screens/settingscreen/deviceDetails";
+import sucessmessage from "./screens/CreateAccount/sucessmessage";
 import { useState } from "react";
 const Stack = createNativeStackNavigator();
 export default function App() {
@@ -39,6 +42,7 @@ export default function App() {
           <Stack.Screen name="Auth" component={AuthScreen} />
           <Stack.Screen name="Verification" component={Verification} />
           <Stack.Screen name="CreateAccount" component={CreateAccount} />
+          <Stack.Screen name="sucessmessage" component={sucessmessage} />
           {/* <Stack.Screen name="CreateFamily" component={CreateFamily} /> */}
           <Stack.Screen name="CircleCode" component={CircleCode} />
           <Stack.Screen name="KidsProfileSetup" component={KidsProfileSetup} />
@@ -52,6 +56,9 @@ export default function App() {
           <Stack.Screen name="chatScreen" component={chat} />
           <Stack.Screen name="UsageReport" component={UsageReport} />
           <Stack.Screen name="Appblocking" component={Appblocking} />
+          <Stack.Screen name="ConnectedDevice" component={ConnectedDevice} />
+          <Stack.Screen name="DeviceDetails" component={DeviceDetails} />
+
 
 
         </Stack.Navigator>

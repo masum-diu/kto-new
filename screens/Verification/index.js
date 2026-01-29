@@ -2,6 +2,7 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-nativ
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigation } from '@react-navigation/native';
 import instance from '../../api/api_instance';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const Verification = ({ route }) => {
    const email = route?.params?.email;
@@ -55,7 +56,9 @@ const Verification = ({ route }) => {
           otp: code.join(''),
         });
         console.log('Verification Successful:', response.data);
-        navigation.navigate("CreateAccount");
+         const accessToken = response?.data?.data?.accessToken;
+        await AsyncStorage.setItem('accessToken', accessToken);
+         navigation.navigate("CreateAccount");
 
         // Navigate to the next screen or perform other actions
       } catch (error) {

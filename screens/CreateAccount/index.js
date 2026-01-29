@@ -14,6 +14,7 @@ const CreateAccount = () => {
   const handleSave = async () => {
     try {
       const storedToken = await AsyncStorage.getItem('accessToken');
+      console.log('Stored Access Token:', storedToken);
       const response = await instance.patch('/users/me', {
         name,
         familyName,
@@ -27,7 +28,7 @@ const CreateAccount = () => {
 
       });
        console.log('Verification Successful:', response.data);
-      navigation.navigate("CircleCode");
+      navigation.navigate("sucessmessage");
 
       // Navigate to the next screen or perform other actions
     } catch (error) {
