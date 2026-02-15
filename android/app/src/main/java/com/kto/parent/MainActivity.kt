@@ -1,4 +1,4 @@
-package com.kto
+package com.kto.parent
 
 import com.facebook.react.ReactActivity
 import com.facebook.react.ReactActivityDelegate
