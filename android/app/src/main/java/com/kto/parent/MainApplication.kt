@@ -1,4 +1,4 @@
-package com.kto
+package com.kto.parent
 
 import android.app.Application
 import com.facebook.react.PackageList
