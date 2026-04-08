@@ -39,7 +39,7 @@ const WhoseDevices = () => {
 
       <View style={styles.buttonWrapper}>
         <TouchableOpacity
-          onPress={() => navigation.navigate("Home")}
+          onPress={() => navigation.navigate("Auth")}
           style={styles.primaryButton}
         >
           <Text style={styles.primaryButtonText}>Parents’ devices</Text>

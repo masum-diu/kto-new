@@ -37,10 +37,10 @@ export default function App() {
         <Stack.Navigator screenOptions={{ headerShown: false }}>
           {!accessToken ? (
             <><Stack.Screen name="Onboarding" component={Onboarding} />
-            <Stack.Screen name="Auth" component={AuthScreen} /></>
+            </>
           ) : null}
           <Stack.Screen name="WhoseDevices" component={WhoseDevices} />
-          
+          <Stack.Screen name="Auth" component={AuthScreen} />
           <Stack.Screen name="Verification" component={Verification} />
           <Stack.Screen name="CreateAccount" component={CreateAccount} />
           <Stack.Screen name="sucessmessage" component={sucessmessage} />
