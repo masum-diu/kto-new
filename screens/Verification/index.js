@@ -3,6 +3,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useNavigation } from '@react-navigation/native';
 import instance from '../../api/api_instance';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const Verification = ({ route }) => {
    const email = route?.params?.email;
@@ -74,7 +75,7 @@ const Verification = ({ route }) => {
   };
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <Text style={styles.header}>Verification</Text>
 
       <View style={styles.codeRow}>
@@ -113,7 +114,7 @@ const Verification = ({ route }) => {
       <TouchableOpacity onPress={handleVerify} style={styles.confirmButton}>
         <Text style={styles.confirmButtonText}>Confirm</Text>
       </TouchableOpacity>
-    </View>
+    </SafeAreaView>
   );
 };
 

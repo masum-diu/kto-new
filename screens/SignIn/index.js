@@ -2,13 +2,15 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet,} from 'react-nativ
 import React, { useState } from 'react';
 import { useNavigation } from '@react-navigation/native';
 import instance from '../../api/api_instance';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useAuth } from '../../context/AuthContext';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const AuthScreen = () => {
   const [isSignIn, setIsSignIn] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const navigation = useNavigation();
+  const { login } = useAuth();
   const handleSubmit = async () => {
     if (isSignIn) {
       try {
@@ -18,9 +20,7 @@ const AuthScreen = () => {
         });
         // console.log('Sign In Successful:', response?.data?.data?.user?.familyId);
         const accessToken = response?.data?.data?.accessToken;
-        await AsyncStorage.setItem('accessToken', accessToken);
-        const familyId = response?.data?.data?.user?.familyId;
-        navigation.navigate("MainHome", { familyId });
+        await login(accessToken);
         
         // Navigate to the next screen or perform other actions
       } catch (error) {
@@ -50,7 +50,7 @@ const AuthScreen = () => {
   };
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <Text style={styles.headerText}>
         You need to {isSignIn ? 'Sign In' : 'create an account'}
       </Text>
@@ -105,7 +105,7 @@ const AuthScreen = () => {
           </Text>
         )}
       </TouchableOpacity>
-    </View>
+    </SafeAreaView>
   );
 };
 

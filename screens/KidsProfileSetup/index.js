@@ -1,6 +1,7 @@
 import { View, Text, TextInput, TouchableOpacity, Image, Dimensions, ScrollView, StyleSheet } from 'react-native';
 import React, { useState } from 'react';
 import { useNavigation } from '@react-navigation/native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const KidsProfileSetup = () => {
     const [name, setName] = useState('');
@@ -13,6 +14,7 @@ const KidsProfileSetup = () => {
     };
 
     return (
+        <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }}>
         <ScrollView style={styles.container}>
             <View>
                 {/* Title */}
@@ -84,6 +86,7 @@ const KidsProfileSetup = () => {
                 </TouchableOpacity>
             </View>
         </ScrollView>
+        </SafeAreaView>
     );
 };
 

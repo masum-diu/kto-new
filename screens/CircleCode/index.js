@@ -2,6 +2,7 @@ import { View, Text, Image, ScrollView, TouchableOpacity, StyleSheet } from 'rea
 import React, { useEffect } from 'react';
 import { useNavigation } from '@react-navigation/native';
 import instance from '../../api/api_instance';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const CircleCode = ({ route }) => {
   const navigation = useNavigation();
@@ -35,6 +36,7 @@ const CircleCode = ({ route }) => {
   }, []);
 
   return (
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }}>
     <ScrollView
       contentContainerStyle={styles.container}
       showsVerticalScrollIndicator={false}
@@ -74,6 +76,7 @@ const CircleCode = ({ route }) => {
         </TouchableOpacity>
       </View>
     </ScrollView>
+    </SafeAreaView>
   );
 };
 
