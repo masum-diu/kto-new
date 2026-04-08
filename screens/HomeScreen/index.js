@@ -40,21 +40,12 @@ const HomeScreen = () => {
   console.log(selectedChild);
 
   try {
-    const response = await instance.post(
-      "/control/send-command",
-      {
-        trackId: selectedChild,
-        command: "SCREENSHOT",
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      }
-    );
-
-    console.log("Command sent:", response.data);
+   
+     if (!selectedChild) {
+      alert("Please select a child device first.");
+      return;
+    }
+    else{ navigation.navigate("ScreenMirroring",{selectedChild})}
      navigation.navigate("ScreenMirroring",{selectedChild})
   } catch (error) {
     console.error(
@@ -160,14 +151,14 @@ const HomeScreen = () => {
         <View style={styles.card}>
           <Text style={styles.sectionTitle}>Live Monitoring</Text>
           <View style={styles.iconRow}>
-            <TouchableOpacity onPress={() => navigation.navigate("RemoteCameraView")}>
+            <TouchableOpacity onPress={() => navigation.navigate("Location")}>
               <View style={styles.iconBox}>
-                <Image source={require("../../assets/fi_711191.png")} style={styles.iconImg} />
-                <Text style={styles.iconText}>Remote Camera</Text>
+                <Image source={require("../../assets/track.png")} style={styles.iconImg} />
+                <Text style={styles.iconText}>Location tracking</Text>
               </View>  </TouchableOpacity>
             <TouchableOpacity onPress={() => requestScreenCapturePermission()}> <View style={styles.iconBox}>
               <Image source={require("../../assets/fi_711191.png")} style={styles.iconImg} />
-              <Text style={styles.iconText}>Screenshot</Text>
+              <Text style={styles.iconText}>Remote Camera</Text>
             </View></TouchableOpacity>
             <TouchableOpacity onPress={() => navigation.navigate("OneWayAudio")}>
               <View style={styles.iconBox}>

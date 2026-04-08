@@ -1,4 +1,6 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@react-navigation/native';
+import { useState } from 'react';
 import {
   View,
   Text,
@@ -12,7 +14,13 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 const WhoseDevices = () => {
   const { width, height } = Dimensions.get("window");
   const navigation = useNavigation();
+  const [accessToken, setAccessToken] = useState(null);
+  AsyncStorage.getItem("accessToken").then((value) => {
+    setAccessToken(value);
+    
+  });
 
+  const onPress = accessToken ? "Home" : "Auth";
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.centerContent}>
@@ -31,7 +39,7 @@ const WhoseDevices = () => {
 
       <View style={styles.buttonWrapper}>
         <TouchableOpacity
-          onPress={() => navigation.navigate("Auth")}
+          onPress={() => navigation.navigate("Home")}
           style={styles.primaryButton}
         >
           <Text style={styles.primaryButtonText}>Parents’ devices</Text>

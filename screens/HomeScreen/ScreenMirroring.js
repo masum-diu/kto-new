@@ -1,7 +1,8 @@
 import { useNavigation } from "@react-navigation/native";
 import React, { useEffect, useState } from "react";
-import { View, Text, Image, TouchableOpacity, StyleSheet, Dimensions, FlatList, Modal } from "react-native";
+import { View, Text, Image, TouchableOpacity, StyleSheet, Dimensions, FlatList, Modal, Alert } from "react-native";
 import instance from "../../api/api_instance";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 
 const { width } = Dimensions.get("window"); // screen width dynamically নিচ্ছি
@@ -11,17 +12,17 @@ export default function ScreenMirroring({ route }) {
   const [selectedImage, setSelectedImage] = useState(null);
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState(null);
-  console.log(data)
+  // console.log(data)
   const navigation = useNavigation();
   const { selectedChild } = route.params;
-  console.log(selectedChild)
+  // console.log(selectedChild)
 
   const requestScreenCapturePermission = async () => {
 
     try {
       setLoading(true);
       const response = await instance.get(
-        `/screenshots/${selectedChild}`,
+        `/photos/${selectedChild}`,
 
       );
       setLoading(false);
@@ -32,14 +33,43 @@ export default function ScreenMirroring({ route }) {
     }
   };
 
+  const camaraRequest = async (cameraType) => {
+    try {
+      const token = await AsyncStorage.getItem("accessToken");
+
+      const response = await instance.post(
+        "/control/send-command",
+        {
+          trackId: selectedChild,
+          command: "CAPTURE_CAMERA",
+          options: {
+            camera: cameraType, // "front" বা "back"
+          },
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      Alert.alert("Command Sent", `Camera capture command sent for ${cameraType} camera.`);
+      // console.log("Command sent:", response.data);
+
+    } catch (error) {
+      console.log("Camera request error:", error);
+    }
+  };
 
   useEffect(() => {
     requestScreenCapturePermission();
   }, []);
 
+
+
   const renderGridItem = ({ item }) => (
-    <TouchableOpacity style={styles.gridItem} onPress={() => { setSelectedImage(item.image_url); setModalVisible(true); }}>
-      <Image source={{ uri: `https://ktobackend.etherstaging.xyz${item.image_url}` }} style={styles.gridImage} resizeMode="cover" />
+    <TouchableOpacity style={styles.gridItem} onPress={() => { setSelectedImage(item.imageUrl); setModalVisible(true); }}>
+      <Image source={{ uri: `https://api.kto.solutions${item.imageUrl}` }} style={styles.gridImage} resizeMode="cover" />
     </TouchableOpacity>
   );
 
@@ -54,13 +84,26 @@ export default function ScreenMirroring({ route }) {
             resizeMode="contain"
           />
         </TouchableOpacity>
-        <Text style={styles.title}>Screenshots</Text>
+        <Text style={styles.title}>Get Photos</Text>
         <TouchableOpacity onPress={requestScreenCapturePermission} style={styles.refreshButton}>
-            <Text style={styles.refreshButtonText}>↻</Text>
+          <Text style={styles.refreshButtonText}>↻</Text>
         </TouchableOpacity>
       </View>
-      
+
       {/* Image Section */}
+
+      <View style={styles.cameraContainer}>
+        <TouchableOpacity onPress={() => camaraRequest("front")} style={styles.cameraButton}>
+          <Text style={styles.cameraIcon}>📷</Text>
+          <Text style={styles.cameraText}>Front Camera</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity onPress={() => camaraRequest("back")} style={styles.cameraButton}>
+          <Text style={styles.cameraIcon}>📷</Text>
+          <Text style={styles.cameraText}>Back Camera</Text>
+        </TouchableOpacity>
+      </View>
+
 
       {loading ? <View style={styles.imageRow}>
         <Image
@@ -92,7 +135,7 @@ export default function ScreenMirroring({ route }) {
           <TouchableOpacity style={styles.closeButton} onPress={() => setModalVisible(false)}>
             <Text style={styles.closeButtonText}>✕</Text>
           </TouchableOpacity>
-          <Image source={{ uri: `https://ktobackend.etherstaging.xyz${selectedImage}` }} style={styles.fullImage} resizeMode="contain" />
+          <Image source={{ uri: `https://api.kto.solutions${selectedImage}` }} style={styles.fullImage} resizeMode="contain" />
         </View>
       </Modal>
     </View>
@@ -100,6 +143,37 @@ export default function ScreenMirroring({ route }) {
 }
 
 const styles = StyleSheet.create({
+  cameraContainer: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+    marginVertical: 15,
+    paddingHorizontal: 15,
+  },
+
+  cameraButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#6a1b9a",
+    paddingVertical: 10,
+    paddingHorizontal: 18,
+    borderRadius: 10,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+
+  cameraIcon: {
+    fontSize: 18,
+    marginRight: 6,
+  },
+
+  cameraText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "600",
+  },
   container: {
     flex: 1,
     backgroundColor: "#F2E8FF",
