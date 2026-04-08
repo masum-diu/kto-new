@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, Pressable, Image } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import HomeScreen from "../screens/HomeScreen";
 import Location from "../screens/Location";
 import Safetyscreen from "../screens/Safetyscreen";
@@ -9,8 +10,9 @@ import MembershipScreen from "../screens/MembershipScreen";
 const Tab = createBottomTabNavigator();
 
 function MyTabBar({ state, descriptors, navigation }) {
+    const insets = useSafeAreaInsets();
     return (
-        <View style={styles.container}>
+        <View style={[styles.container, { bottom: insets.bottom + 10 }]}>
             {state.routes.map((route, index) => {
                 const { options } = descriptors[route.key];
                 const isFocused = state.index === index;

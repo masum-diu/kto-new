@@ -9,11 +9,13 @@ import {
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 
+import { SafeAreaView } from 'react-native-safe-area-context';
+
 export default function Safetyscreen() {
   const [enabled, setEnabled] = useState(false);
 
   return (
-    
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }}>
     <ScrollView contentContainerStyle={styles.container}>
       {/* ===== Header ===== */}
       <Text style={styles.title}>Family Safety Assist</Text>
@@ -23,7 +25,7 @@ export default function Safetyscreen() {
       <View style={styles.card}>
         <View style={styles.cardTop}>
           <View style={styles.iconWrapperRed}>
-            <Ionicons name="desktop-outline" size={22} color="#fff" />
+            <Ionicons name="shield-outline" size={22} color="#fff" />
           </View>
           <View style={styles.cardTextArea}>
             <Text style={styles.cardTitle}>Data breach alerts</Text>
@@ -32,7 +34,6 @@ export default function Safetyscreen() {
             <Ionicons name="checkmark" size={18} color="#fff" />
           </View>
         </View>
-
         <TouchableOpacity style={styles.linkRow}>
           <Text style={styles.linkText}>View all breach</Text>
           <Ionicons name="chevron-forward" size={16} color="#6B21A8" />
@@ -55,7 +56,6 @@ export default function Safetyscreen() {
             trackColor={{ false: '#ccc', true: '#D3B3F8' }}
           />
         </View>
-
         <View style={styles.infoBox}>
           <Text style={styles.infoText}>
             Get $ Dummy reimbursement and restoration support for stolen funds.{' '}
@@ -63,11 +63,12 @@ export default function Safetyscreen() {
           </Text>
         </View>
       </View>
-        {/* ===== Data Breach Card ===== */}
+
+      {/* ===== Crash Detection Card ===== */}
       <View style={styles.card}>
         <View style={styles.cardTop}>
-          <View style={styles.iconWrapperRed}>
-            <Ionicons name="desktop-outline" size={22} color="#fff" />
+          <View style={styles.iconWrapperOrange}>
+            <Ionicons name="car-outline" size={22} color="#fff" />
           </View>
           <View style={styles.cardTextArea}>
             <Text style={styles.cardTitle}>Crash detection</Text>
@@ -77,10 +78,12 @@ export default function Safetyscreen() {
           </View>
         </View>
       </View>
+
+      {/* ===== Emergency Dispatch Card ===== */}
       <View style={styles.card}>
         <View style={styles.cardTop}>
-          <View style={styles.iconWrapperRed}>
-            <Ionicons name="desktop-outline" size={22} color="#fff" />
+          <View style={styles.iconWrapperGreen}>
+            <Ionicons name="call-outline" size={22} color="#fff" />
           </View>
           <View style={styles.cardTextArea}>
             <Text style={styles.cardTitle}>Emergency dispatch</Text>
@@ -92,6 +95,7 @@ export default function Safetyscreen() {
       </View>
 
     </ScrollView>
+    </SafeAreaView>
   );
 }
 
@@ -134,6 +138,16 @@ const styles = StyleSheet.create({
   },
   iconWrapperBlue: {
     backgroundColor: '#7C3AED',
+    borderRadius: 12,
+    padding: 8,
+  },
+  iconWrapperOrange: {
+    backgroundColor: '#F97316',
+    borderRadius: 12,
+    padding: 8,
+  },
+  iconWrapperGreen: {
+    backgroundColor: '#16A34A',
     borderRadius: 12,
     padding: 8,
   },

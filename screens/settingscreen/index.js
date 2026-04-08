@@ -1,14 +1,22 @@
 import { useNavigation } from "@react-navigation/native";
 import React, { useEffect, useState } from "react";
-import { View, Text, StyleSheet, Image, TouchableOpacity, ScrollView } from "react-native";
+import { View, Text, StyleSheet, Image, TouchableOpacity, ScrollView, ActivityIndicator } from "react-native";
 import instance from "../../api/api_instance";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useAuth } from "../../context/AuthContext";
+import { SafeAreaView } from "react-native-safe-area-context";
+import Ionicons from "react-native-vector-icons/Ionicons";
 
 const SettingsScreen = () => {
     const navigation = useNavigation();
+    const { logout } = useAuth();
     const [user, setUser] = useState(null);
+    // console.log(user)
     const [loading, setLoading] = useState(true);
     const [familyId, setFamilyId] = useState(null);
+    const handleLogout = async () => {
+        await logout();
+    };
     const getUser = async () => {
         try {
             setLoading(true);
@@ -20,7 +28,7 @@ const SettingsScreen = () => {
 
                 },
             });
-            console.log('User Retrieved:', response);
+
             setFamilyId(response?.data?.data?.familyId);
             setUser(response?.data?.data);
             setLoading(false);
@@ -33,85 +41,132 @@ const SettingsScreen = () => {
     }, []);
 
     return (
-        <ScrollView style={styles.container}>
-            {/* Header */}
-            <View style={styles.header}>
-                <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-                    <Image
-                        source={require("../../assets/angle-small-left.png")}
-                        style={{ width: 35, height: 35 }}
-                        resizeMode="contain"
-                    />
-                </TouchableOpacity>
-                <Text style={styles.headerText}>Settings</Text>
-                <View style={{ width: 24 }} />
-            </View>
-
-            {/* Profile Section */}
-            <TouchableOpacity style={styles.profileCard}>
-                <Image
-                    source={require("../../assets/logoicons.png")}
-                    style={styles.profileImage}
-                />
-                <View style={styles.profileInfo}>
-                    <Text style={styles.profileName}>Jhon Smith Roman</Text>
-                    <Text style={styles.profileEmail}>jhon.smith@gmail.com</Text>
+        <SafeAreaView style={styles.container}>
+            <ScrollView>
+                {/* Header */}
+                <View style={styles.header}>
+                    <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+                        <Image
+                            source={require("../../assets/angle-small-left.png")}
+                            style={{ width: 35, height: 35 }}
+                            resizeMode="contain"
+                        />
+                    </TouchableOpacity>
+                    <Text style={styles.headerText}>Settings</Text>
+                    <View style={{ width: 24 }} />
                 </View>
-            </TouchableOpacity>
 
-            {/* Settings Options */}
-            <View style={styles.optionGroup}>
-                <TouchableOpacity style={styles.optionCard}>
-                    <Text style={styles.optionText}>My Device</Text>
-                    <Text style={styles.optionBadge}>1</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.optionCard} onPress={() => navigation.navigate("CircleCode", { familyId })}>
-                    <Text style={styles.optionText}>Add Device</Text>
-                    <Text style={styles.optionBadge}>1</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.optionCard} onPress={() => navigation.navigate("ConnectedDevice",{ familyId })}>
-                    <Text style={styles.optionText}>Connected Device</Text>
-                    <Text style={styles.optionBadge}>1</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity style={styles.optionCard} onPress={() => navigation.navigate("chatScreen")}>
-                    <Text style={styles.optionText}>Chat</Text>
+                {/* Profile Section */}
+                <TouchableOpacity style={styles.profileCard}>
+                    <Image
+                        source={require("../../assets/logoicons.png")}
+                        style={styles.profileImage}
+                    />
+                    {loading ? (
+                        <ActivityIndicator size="small" color="#6d16a2" style={{ marginLeft: 15 }} />
+                    ) : (
+                        <View style={styles.profileInfo}>
+                            <Text style={styles.profileName}>{user?.name}</Text>
+                            <Text style={styles.profileEmail}>{user?.email}</Text>
+                        </View>
+                    )}
                 </TouchableOpacity>
 
-                <TouchableOpacity style={styles.optionCard}>
-                    <Text style={styles.optionText}>My Location</Text>
-                    <Text style={styles.optionBadge}>1</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity style={styles.optionCard} onPress={() => navigation.navigate("UsageReport")}>
-                    <Text style={styles.optionText}>Usage Report</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity style={styles.optionCard} onPress={() => navigation.navigate("Appblocking")}>
-                    <Text style={styles.optionText}>App Blocking</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity style={styles.optionCard}>
-                    <Text style={styles.optionText}>My Recording</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity style={styles.optionCard}>
-                    <Text style={styles.optionText}>Help</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity style={styles.optionCard}>
-                    <Text style={styles.optionText}>Feedback</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity style={styles.optionCard}>
-                    <Text style={styles.optionText}>Language</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity style={styles.optionCard}>
-                    <Text style={styles.optionText}>About us</Text>
-                </TouchableOpacity>
-            </View>
-        </ScrollView>
+                {/* Settings Options */}
+                <View style={styles.optionGroup}>
+                    <TouchableOpacity style={styles.optionCard}>
+                        <View style={styles.optionLeft}>
+                            <Ionicons name="phone-portrait-outline" size={22} color="#6d16a2" />
+                            <Text style={styles.optionText}>My Device</Text>
+                        </View>
+                        <Ionicons name="chevron-forward" size={18} color="#ccc" />
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.optionCard} onPress={() => navigation.navigate("CircleCode", { familyId })}>
+                        <View style={styles.optionLeft}>
+                            <Ionicons name="add-circle-outline" size={22} color="#6d16a2" />
+                            <Text style={styles.optionText}>Add Device</Text>
+                        </View>
+                        <Ionicons name="chevron-forward" size={18} color="#ccc" />
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.optionCard} onPress={() => navigation.navigate("ConnectedDevice", { familyId })}>
+                        <View style={styles.optionLeft}>
+                            <Ionicons name="wifi-outline" size={22} color="#6d16a2" />
+                            <Text style={styles.optionText}>Connected Device</Text>
+                        </View>
+                        <Ionicons name="chevron-forward" size={18} color="#ccc" />
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.optionCard} onPress={() => navigation.navigate("chatScreen")}>
+                        <View style={styles.optionLeft}>
+                            <Ionicons name="chatbubble-outline" size={22} color="#6d16a2" />
+                            <Text style={styles.optionText}>Chat</Text>
+                        </View>
+                        <Ionicons name="chevron-forward" size={18} color="#ccc" />
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.optionCard}>
+                        <View style={styles.optionLeft}>
+                            <Ionicons name="location-outline" size={22} color="#6d16a2" />
+                            <Text style={styles.optionText}>My Location</Text>
+                        </View>
+                        <Ionicons name="chevron-forward" size={18} color="#ccc" />
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.optionCard} onPress={() => navigation.navigate("UsageReport")}>
+                        <View style={styles.optionLeft}>
+                            <Ionicons name="bar-chart-outline" size={22} color="#6d16a2" />
+                            <Text style={styles.optionText}>Usage Report</Text>
+                        </View>
+                        <Ionicons name="chevron-forward" size={18} color="#ccc" />
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.optionCard} onPress={() => navigation.navigate("Appblocking")}>
+                        <View style={styles.optionLeft}>
+                            <Ionicons name="ban-outline" size={22} color="#6d16a2" />
+                            <Text style={styles.optionText}>App Blocking</Text>
+                        </View>
+                        <Ionicons name="chevron-forward" size={18} color="#ccc" />
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.optionCard}>
+                        <View style={styles.optionLeft}>
+                            <Ionicons name="videocam-outline" size={22} color="#6d16a2" />
+                            <Text style={styles.optionText}>My Recording</Text>
+                        </View>
+                        <Ionicons name="chevron-forward" size={18} color="#ccc" />
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.optionCard}>
+                        <View style={styles.optionLeft}>
+                            <Ionicons name="help-circle-outline" size={22} color="#6d16a2" />
+                            <Text style={styles.optionText}>Help</Text>
+                        </View>
+                        <Ionicons name="chevron-forward" size={18} color="#ccc" />
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.optionCard}>
+                        <View style={styles.optionLeft}>
+                            <Ionicons name="chatbox-ellipses-outline" size={22} color="#6d16a2" />
+                            <Text style={styles.optionText}>Feedback</Text>
+                        </View>
+                        <Ionicons name="chevron-forward" size={18} color="#ccc" />
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.optionCard}>
+                        <View style={styles.optionLeft}>
+                            <Ionicons name="language-outline" size={22} color="#6d16a2" />
+                            <Text style={styles.optionText}>Language</Text>
+                        </View>
+                        <Ionicons name="chevron-forward" size={18} color="#ccc" />
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.optionCard}>
+                        <View style={styles.optionLeft}>
+                            <Ionicons name="information-circle-outline" size={22} color="#6d16a2" />
+                            <Text style={styles.optionText}>About us</Text>
+                        </View>
+                        <Ionicons name="chevron-forward" size={18} color="#ccc" />
+                    </TouchableOpacity>
+                    <TouchableOpacity style={[styles.optionCard, styles.logoutCard]} onPress={handleLogout}>
+                        <View style={styles.optionLeft}>
+                            <Ionicons name="log-out-outline" size={22} color="#e53935" />
+                            <Text style={styles.logoutText}>Logout</Text>
+                        </View>
+                    </TouchableOpacity>
+                </View>
+            </ScrollView>
+        </SafeAreaView>
     );
 };
 
@@ -182,12 +237,31 @@ const styles = StyleSheet.create({
         color: "#000",
         fontWeight: "600",
     },
+    optionLeft: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 12,
+    },
+    optionIcon: {
+        width: 22,
+        height: 22,
+        resizeMode: "contain",
+        tintColor: "#6d16a2",
+    },
     optionBadge: {
-        // backgroundColor: "#D9B3FF",
         color: "#000",
         paddingHorizontal: 8,
         paddingVertical: 3,
         borderRadius: 10,
         fontSize: 12,
+    },
+    logoutCard: {
+        borderColor: "#e53935",
+        borderWidth: 1,
+    },
+    logoutText: {
+        fontSize: 16,
+        fontWeight: "600",
+        color: "#e53935",
     },
 });

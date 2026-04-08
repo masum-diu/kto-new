@@ -105,7 +105,7 @@ const HomeScreen = () => {
               style={styles.avatar}
             />
             <View>
-              <Text style={styles.name}>John Smith</Text>
+              <Text style={styles.name}>{user?.name}</Text>
               <View style={styles.onlineRow}>
                 <View style={styles.onlineDot} />
                 <Text style={styles.onlineText}>Online</Text>

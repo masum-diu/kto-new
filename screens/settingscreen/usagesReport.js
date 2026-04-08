@@ -1,6 +1,7 @@
 import { useNavigation } from "@react-navigation/native";
 import React, { useState } from "react";
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image, Switch } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 const dailyData = [
   { id: '1', app: 'YouTube', time: '1h 45m', percentage: 60, color: '#FF0000' },
@@ -38,7 +39,7 @@ export default function UsageReport() {
   };
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
@@ -88,7 +89,7 @@ export default function UsageReport() {
         {/* App Blocking Section */}
        
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -103,7 +104,6 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingHorizontal: 20,
     paddingVertical: 15,
-    // backgroundColor: '#fff',
   },
   headerTitle: {
     fontSize: 20,

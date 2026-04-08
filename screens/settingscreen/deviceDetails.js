@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const DeviceDetails = () => {
     const navigation = useNavigation();
@@ -8,7 +9,8 @@ const DeviceDetails = () => {
     const { device } = route.params;
 
     return (
-        <ScrollView style={styles.container}>
+        <SafeAreaView style={styles.container}>
+        <ScrollView>
             {/* Header */}
             <View style={styles.header}>
                 <TouchableOpacity onPress={() => navigation.goBack()}>
@@ -51,6 +53,7 @@ const DeviceDetails = () => {
                 <Text style={styles.removeButtonText}>Remove Device</Text>
             </TouchableOpacity>
         </ScrollView>
+        </SafeAreaView>
     );
 };
 

@@ -1,8 +1,9 @@
 import { useNavigation } from "@react-navigation/native";
 import React, { useEffect, useState } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image, ActivityIndicator } from "react-native";
 import instance from "../../api/api_instance";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { SafeAreaView } from "react-native-safe-area-context";
 const dummyDevices = [
     {
         id: "1",
@@ -32,7 +33,7 @@ const ConnectedDevice = ({ route }) => {
     const familyId = route.params?.familyId;
     const [loading, setLoading] = useState(true);
     const [devices, setDevices] = useState([]);
-    console.log(devices);
+    // console.log(devices);
      const getDeviceList = async () => {
         try {
             setLoading(true);
@@ -55,8 +56,19 @@ const ConnectedDevice = ({ route }) => {
         getDeviceList();
     }, []);
 
+    
+
+  if (loading) return (
+    <SafeAreaView style={styles.container}>
+      <View style={styles.loader}>
+        <ActivityIndicator size="large" color="#6d16a2" />
+      </View>
+    </SafeAreaView>
+  );
+
   return (
-    <ScrollView style={styles.container}>
+    <SafeAreaView style={styles.container}>
+    <ScrollView>
         {/* Header */}
         <View style={styles.header}>
             <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
@@ -87,6 +99,7 @@ const ConnectedDevice = ({ route }) => {
             ))}
         </View>
     </ScrollView>
+    </SafeAreaView>
   );
 }
 
@@ -155,5 +168,10 @@ const styles = StyleSheet.create({
     deviceStatus: {
         fontSize: 14,
         color: "#555",
+    },
+    loader: {
+        flex: 1,
+        justifyContent: "center",
+        alignItems: "center",
     },
 });

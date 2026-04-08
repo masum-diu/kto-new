@@ -1,6 +1,7 @@
 import { useNavigation } from "@react-navigation/native";
 import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 const dummyChats = [
   {
@@ -28,13 +29,13 @@ const dummyChats = [
   },
 ];
 
-export default function chat() {
+export default function Chat() {
   const navigation = useNavigation();
   const pinnedChats = dummyChats.filter((chat) => chat.pinned);
   const otherChats = dummyChats.filter((chat) => !chat.pinned);
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
@@ -75,7 +76,7 @@ export default function chat() {
           </TouchableOpacity>
         ))}
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }
 

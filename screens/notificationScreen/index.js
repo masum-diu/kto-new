@@ -1,21 +1,23 @@
 import { useNavigation } from "@react-navigation/native";
 import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import Ionicons from "react-native-vector-icons/Ionicons";
 
 const notices = [
-  "App Notifications",
-  "Alerts Request",
-  "Browser History",
-  "TikTok @ YouTube History",
-  "Snapshot",
-  "Usage Logs",
-  "Social App Keyword Detection",
+  { label: "App Notifications", icon: "notifications-outline" },
+  { label: "Alerts Request", icon: "alert-circle-outline" },
+  { label: "Browser History", icon: "globe-outline" },
+  { label: "TikTok @ YouTube History", icon: "play-circle-outline" },
+  { label: "Snapshot", icon: "camera-outline" },
+  { label: "Usage Logs", icon: "bar-chart-outline" },
+  { label: "Social App Keyword Detection", icon: "search-outline" },
 ];
 
-export default function notifications() {
+export default function Notifications() {
   const navigation = useNavigation();
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
@@ -34,25 +36,17 @@ export default function notifications() {
         {notices.map((item, index) => (
           <TouchableOpacity key={index} style={styles.card}>
             <View style={styles.iconWrapper}>
-              <Image
-                source={require("../../assets/fa-solid_car-crash.png")}
-                style={{ width: 35, height: 35 }}
-                resizeMode="contain"
-              />
+              <Ionicons name={item.icon} size={24} color="#fff" />
             </View>
             <View style={styles.textWrapper}>
-              <Text style={styles.title}>{item}</Text>
+              <Text style={styles.title}>{item.label}</Text>
               <Text style={styles.subtitle}>No data available</Text>
             </View>
-            <Image
-                source={require("../../assets/angle-small-right.png")}
-                style={{ width: 20, height: 20 }}
-                resizeMode="contain"
-              />
+            <Ionicons name="chevron-forward" size={20} color="#ccc" />
           </TouchableOpacity>
         ))}
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }
 
