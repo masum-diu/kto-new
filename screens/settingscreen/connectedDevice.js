@@ -1,9 +1,10 @@
 import { useNavigation } from "@react-navigation/native";
-import React, { useEffect, useState } from "react";
+import React, { useState, useCallback } from "react";
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image, ActivityIndicator } from "react-native";
 import instance from "../../api/api_instance";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useFocusEffect } from "@react-navigation/native";
 const dummyDevices = [
     {
         id: "1",
@@ -34,7 +35,7 @@ const ConnectedDevice = ({ route }) => {
     const [loading, setLoading] = useState(true);
     const [devices, setDevices] = useState([]);
     // console.log(devices);
-     const getDeviceList = async () => {
+    const getDeviceList = async () => {
         try {
             setLoading(true);
             const storedToken = await AsyncStorage.getItem('accessToken');
@@ -45,62 +46,65 @@ const ConnectedDevice = ({ route }) => {
                 },
             });
             // console.log(response,"response")
-             setDevices(response?.data?.data);
+            setDevices(response?.data?.data);
             setLoading(false);
-           
+
         } catch (error) {
             //   console.error('User Retrieval Error:', error.response ? error.response.data : error.message);
         }
     };
-    useEffect(() => {
-        getDeviceList();
-    }, []);
+    useFocusEffect(
+        useCallback(() => {
+            getDeviceList();
+        }, [])
+    );
 
-    
 
-  if (loading) return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.loader}>
-        <ActivityIndicator size="large" color="#6d16a2" />
-      </View>
-    </SafeAreaView>
-  );
 
-  return (
-    <SafeAreaView style={styles.container}>
-    <ScrollView>
-        {/* Header */}
-        <View style={styles.header}>
-            <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-                <Image
-                    source={require("../../assets/angle-small-left.png")}
-                    style={{ width: 35, height: 35 }}
-                    resizeMode="contain"
-                />
-            </TouchableOpacity>
-            <Text style={styles.headerText}>Connected Devices</Text>
-            <View style={{ width: 24 }} />
-        </View>
+    if (loading) return (
+        <SafeAreaView style={styles.container}>
+            <View style={styles.loader}>
+                <ActivityIndicator size="large" color="#6d16a2" />
+            </View>
+        </SafeAreaView>
+    );
 
-        {/* Device List */}
-        <View style={styles.listContainer}>
-            {devices?.map((device) => (
-                <TouchableOpacity key={device.id} style={styles.deviceCard} onPress={() => navigation.navigate('DeviceDetails', { device })}>
-                    <Image source={require("../../assets/logoicons.png")} style={styles.deviceImage} />
-                    <View style={styles.deviceInfo}>
-                        <Text style={styles.deviceName}>{device?.child?.deviceBrand}</Text>
-                        {/* <Text style={styles.deviceType}>{device?.child?.deviceId}</Text> */}
-                    </View>
-                    {/* <View style={styles.statusContainer}>
+    return (
+        <SafeAreaView style={styles.container}>
+            <ScrollView>
+                {/* Header */}
+                <View style={styles.header}>
+                    <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+                        <Image
+                            source={require("../../assets/angle-small-left.png")}
+                            style={{ width: 35, height: 35 }}
+                            resizeMode="contain"
+                        />
+                    </TouchableOpacity>
+                    <Text style={styles.headerText}>Connected Devices</Text>
+                    <View style={{ width: 24 }} />
+                </View>
+
+                {/* Device List */}
+                <View style={styles.listContainer}>
+                    {devices?.map((device, index) => (
+                        <TouchableOpacity key={index} style={styles.deviceCard} onPress={() => navigation.navigate('DeviceDetails', { device })}>
+                            <Image source={require("../../assets/logoicons.png")} style={styles.deviceImage} />
+                            <View style={styles.deviceInfo}>
+                                <Text style={styles.deviceName}>{device?.child?.deviceBrand}</Text>
+                                <Text style={styles.deviceName}>{device?.child?.name}</Text>
+                                {/* <Text style={styles.deviceType}>{device?.child?.deviceId}</Text> */}
+                            </View>
+                            {/* <View style={styles.statusContainer}>
                         <View style={[styles.statusDot, { backgroundColor: device.status === 'Connected' ? '#2ecc71' : '#e74c3c' }]} />
                         <Text style={styles.deviceStatus}>{device.status}</Text>
                     </View> */}
-                </TouchableOpacity>
-            ))}
-        </View>
-    </ScrollView>
-    </SafeAreaView>
-  );
+                        </TouchableOpacity>
+                    ))}
+                </View>
+            </ScrollView>
+        </SafeAreaView>
+    );
 }
 
 export default ConnectedDevice;

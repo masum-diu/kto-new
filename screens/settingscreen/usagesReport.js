@@ -1,103 +1,116 @@
-import { useNavigation } from "@react-navigation/native";
-import React, { useState } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image, Switch } from "react-native";
+import { useNavigation, useRoute } from "@react-navigation/native";
+import React, { useState, useEffect } from "react";
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-
-const dailyData = [
-  { id: '1', app: 'YouTube', time: '1h 45m', percentage: 60, color: '#FF0000' },
-  { id: '2', app: 'TikTok', time: '1h 10m', percentage: 35, color: '#000000' },
-  { id: '3', app: 'Browser', time: '35m', percentage: 20, color: '#4285F4' },
-  { id: '4', app: 'Other', time: '20m', percentage: 15, color: '#cccccc' },
-];
-
-const weeklyData = [
-  { id: '1', day: 'Sun', percentage: 50 },
-  { id: '2', day: 'Mon', percentage: 75 },
-  { id: '3', day: 'Tue', percentage: 60 },
-  { id: '4', day: 'Wed', percentage: 80 },
-  { id: '5', day: 'Thu', percentage: 40 },
-  { id: '6', day: 'Fri', percentage: 90 },
-  { id: '7', day: 'Sat', percentage: 85 },
-];
-
-const appBlockingData = [
-  { id: '1', app: 'YouTube', isBlocked: true },
-  { id: '2', app: 'TikTok', isBlocked: false },
-  { id: '3', app: 'Instagram', isBlocked: true },
-  { id: '4', app: 'Snapchat', isBlocked: false },
-  { id: '5', app: 'Facebook', isBlocked: false },
-];
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import instance from "../../api/api_instance";
+import Ionicons from "react-native-vector-icons/Ionicons";
 
 export default function UsageReport() {
   const navigation = useNavigation();
-  const [blockedApps, setBlockedApps] = useState(appBlockingData);
+  const route = useRoute();
+  const trackId = route.params?.trackId;
+  const [activities, setActivities] = useState([]);
+  const [loading, setLoading] = useState(true);
+console.log(activities)
+  useEffect(() => {
+    const fetchUsage = async () => {
+      try {
+        setLoading(true);
+        const token = await AsyncStorage.getItem('accessToken');
+        const res = await instance.get(`/children/${trackId}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        console.log(res)
+        const raw = res?.data?.data?.activities || res?.data?.data || [];
+        const unique = Object.values(
+          raw.reduce((acc, item) => {
+            if (!acc[item.app_name]) {
+              acc[item.app_name] = item;
+            } else {
+              acc[item.app_name].duration_minutes += item.duration_minutes;
+            }
+            return acc;
+          }, {})
+        );
+        setActivities(unique);
+      } catch (e) {
+        console.log(e);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchUsage();
+  }, [trackId]);
 
-  const toggleSwitch = (id) => {
-    setBlockedApps(prevState =>
-      prevState.map(app => (app.id === id ? { ...app, isBlocked: !app.isBlocked } : app))
-    );
+  const today = new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+  const totalMinutes = (activities || []).reduce((sum, a) => sum + (a.duration_minutes || 0), 0);
+  const maxMinutes = Math.max(...(activities || []).map(a => a.duration_minutes || 0), 1);
+
+  const formatDuration = (mins) => {
+    if (mins >= 60) return `${Math.floor(mins / 60)}h ${mins % 60}m`;
+    return `${mins}m`;
   };
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-          <Image
-            source={require("../../assets/angle-small-left.png")}
-            style={{ width: 35, height: 35 }}
-            resizeMode="contain"
-          />
+        <TouchableOpacity onPress={() => navigation.goBack()}>
+          <Ionicons name="arrow-back" size={26} color="#000" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Usage Report</Text>
-        <View style={{ width: 24 }} /> {/* Placeholder for alignment */}
+        <View style={{ width: 26 }} />
       </View>
 
-      {/* List */}
-      <ScrollView contentContainerStyle={styles.listContainer}>
-        {/* Screen Usage Time Section */}
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>Screen Usage Time</Text>
-          <Text style={styles.cardSubtitle}>This Week's Average: 4h 15m / day</Text>
-          <View style={styles.barChartContainer}>
-            {weeklyData.map(item => (
-              <View key={item.id} style={styles.barWrapper}>
-                <View style={styles.bar}>
-                  <View style={[styles.barFill, { height: `${item.percentage}%` }]} />
-                </View>
-                <Text style={styles.barLabel}>{item.day}</Text>
-              </View>
-            ))}
+      {loading ? (
+        <View style={styles.loader}>
+          <ActivityIndicator size="large" color="#6d16a2" />
+        </View>
+      ) : (
+        <ScrollView contentContainerStyle={styles.listContainer}>
+          {/* Summary Card */}
+          <View style={styles.summaryCard}>
+            <Ionicons name="time-outline" size={36} color="#6d16a2" />
+            <Text style={styles.summaryLabel}>Total Screen Time</Text>
+            <Text style={styles.summaryValue}>{formatDuration(totalMinutes)}</Text>
+            {activities[0] && (
+              <Text style={styles.summaryDate}>{today}</Text>
+            )}
           </View>
-        </View>
 
-        {/* App Usage Time Section */}
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>App Usage Time</Text>
-          <Text style={styles.cardSubtitle}>Today's Screen Time: 3h 50m</Text>
-          {dailyData.map(item => (
-            <View key={item.id} style={styles.usageRow}>
-              <Text style={styles.appName}>{item.app}</Text>
-              <View style={styles.progressBarContainer}>
-                <View style={[styles.progressBar, { width: `${item.percentage}%`, backgroundColor: item.color }]} />
-              </View>
-              <Text style={styles.appTime}>{item.time}</Text>
-            </View>
-          ))}
-        </View>
-
-        {/* App Blocking Section */}
-       
-      </ScrollView>
+          {/* Activity List */}
+          <View style={styles.card}>
+            <Text style={styles.cardTitle}>App Activities</Text>
+            {activities.length === 0 ? (
+              <Text style={styles.emptyText}>No activity data available</Text>
+            ) : (
+              activities.map((item, index) => (
+                <View key={item.id || index} style={styles.activityRow}>
+                  <View style={styles.appIconWrapper}>
+                    <Ionicons name="phone-portrait-outline" size={18} color="#fff" />
+                  </View>
+                  <View style={styles.appInfo}>
+                    <Text style={styles.appName}>{item.app_name}</Text>
+                    <Text style={styles.packageName}>{item.package_name}</Text>
+                    <View style={styles.progressBarContainer}>
+                      <View style={[styles.progressBar, {
+                        width: `${Math.round((item.duration_minutes / maxMinutes) * 100)}%`
+                      }]} />
+                    </View>
+                  </View>
+                  <Text style={styles.appTime}>{formatDuration(item.duration_minutes)}</Text>
+                </View>
+              ))
+            )}
+          </View>
+        </ScrollView>
+      )}
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#f0e6f7", // Lighter purple background
-  },
+  container: { flex: 1, backgroundColor: "#f0e6f7" },
   header: {
     flexDirection: "row",
     alignItems: "center",
@@ -105,94 +118,60 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 15,
   },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: "medium",
-    color: "#000",
+  headerTitle: { fontSize: 20, fontWeight: "600", color: "#000" },
+  loader: { flex: 1, justifyContent: "center", alignItems: "center" },
+  listContainer: { padding: 16 },
+  summaryCard: {
+    backgroundColor: "#fff",
+    borderRadius: 16,
+    padding: 24,
+    alignItems: "center",
+    marginBottom: 16,
+    elevation: 3,
+    shadowColor: "#000",
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
   },
-  listContainer: {
-    padding: 20,
-  },
+  summaryLabel: { fontSize: 14, color: "#888", marginTop: 8 },
+  summaryValue: { fontSize: 36, fontWeight: "700", color: "#6d16a2", marginTop: 4 },
+  summaryDate: { fontSize: 13, color: "#aaa", marginTop: 4 },
   card: {
     backgroundColor: "#fff",
-    padding: 15,
-    borderRadius: 12,
-    marginBottom: 15,
-    shadowColor: "#000",
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
+    borderRadius: 16,
+    padding: 16,
     elevation: 3,
+    shadowColor: "#000",
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
   },
-  cardTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 5,
-    color: '#333',
+  cardTitle: { fontSize: 16, fontWeight: "700", color: "#333", marginBottom: 16 },
+  emptyText: { fontSize: 14, color: "#999", textAlign: "center", paddingVertical: 20 },
+  activityRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 16,
   },
-  cardSubtitle: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 20,
+  appIconWrapper: {
+    width: 38,
+    height: 38,
+    borderRadius: 10,
+    backgroundColor: "#6d16a2",
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 12,
   },
-  usageRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 15,
-  },
-  appName: {
-    width: 70,
-    fontSize: 14,
-    color: '#555',
-  },
+  appInfo: { flex: 1 },
+  appName: { fontSize: 14, fontWeight: "600", color: "#333" },
+  packageName: { fontSize: 11, color: "#aaa", marginBottom: 6 },
   progressBarContainer: {
-    flex: 1,
-    height: 10,
-    backgroundColor: '#f0f0f0',
-    borderRadius: 5,
-    marginHorizontal: 10,
+    height: 6,
+    backgroundColor: "#f0f0f0",
+    borderRadius: 3,
   },
   progressBar: {
-    height: '100%',
-    borderRadius: 5,
+    height: "100%",
+    backgroundColor: "#6d16a2",
+    borderRadius: 3,
   },
-  appTime: {
-    width: 60,
-    textAlign: 'right',
-    fontSize: 14,
-    color: '#555',
-  },
-  barChartContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    alignItems: 'flex-end',
-    height: 150,
-    marginTop: 10,
-  },
-  barWrapper: {
-    alignItems: 'center',
-    width: 30,
-  },
-  bar: {
-    width: 20,
-    height: '100%',
-    backgroundColor: '#f0f0f0',
-    borderRadius: 5,
-    justifyContent: 'flex-end',
-  },
-  barFill: {
-    width: '100%',
-    backgroundColor: '#6d16a2',
-    borderRadius: 5,
-  },
-  barLabel: {
-    marginTop: 8,
-    fontSize: 12,
-    color: '#777',
-  },
-  blockingRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 8,
-  },
+  appTime: { fontSize: 13, fontWeight: "600", color: "#6d16a2", marginLeft: 10, minWidth: 40, textAlign: "right" },
 });

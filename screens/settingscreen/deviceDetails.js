@@ -1,12 +1,58 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView, Modal, TextInput, ActivityIndicator } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import instance from '../../api/api_instance';
 
 const DeviceDetails = () => {
     const navigation = useNavigation();
     const route = useRoute();
     const { device } = route.params;
+    const [deviceName, setDeviceName] = useState(device?.child?.name || '');
+    const [modalVisible, setModalVisible] = useState(false);
+    const [newName, setNewName] = useState(device?.child?.name || '');
+    const [saving, setSaving] = useState(false);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchDevice = async () => {
+            try {
+                setLoading(true);
+                const token = await AsyncStorage.getItem('accessToken');
+                const res = await instance.get(`/children/${device?.child?.id}`, {
+                    headers: { Authorization: `Bearer ${token}` },
+                });
+                // console.log(res,"dfsdf")
+                const name = res?.data?.data?.name;
+                if (name) {
+                    setDeviceName(name);
+                    setNewName(name);
+                }
+            } catch (e) {}
+            finally { setLoading(false); }
+        };
+        fetchDevice();
+    }, []);
+
+    const handleRename = async () => {
+        try {
+            setSaving(true);
+            const token = await AsyncStorage.getItem('accessToken');
+            await instance.patch(`/children/${device?.child?.id}`, {
+                name: newName,
+            }, {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+            setDeviceName(newName);
+            setModalVisible(false);
+            navigation.setParams({ device: { ...device, child: { ...device.child, name: newName } } });
+        } catch (e) {
+            console.log(e);
+        } finally {
+            setSaving(false);
+        }
+    };
 
     return (
         <SafeAreaView style={styles.container}>
@@ -27,23 +73,25 @@ const DeviceDetails = () => {
             {/* Device Info Card */}
             <View style={styles.infoCard}>
                 <Image source={require("../../assets/logoicons.png")} style={styles.deviceImage} />
-                <Text style={styles.deviceName}>{device?.child?.deviceBrand}</Text>
-                <Text style={styles.deviceType}> {device?.child?.deviceId}</Text>
-                {/* <View style={styles.statusContainer}>
-                    <View style={[styles.statusDot, { backgroundColor: device.status === 'Connected' ? '#2ecc71' : '#e74c3c' }]} />
-                    <Text style={styles.deviceStatus}>{device.status}</Text>
-                </View> */}
+                {loading ? (
+                    <ActivityIndicator size="small" color="#6d16a2" style={{ marginTop: 8 }} />
+                ) : (
+                    <>
+                        <Text style={styles.deviceName}>{deviceName}</Text>
+                        <Text style={styles.deviceType}>{device?.child?.deviceId}</Text>
+                    </>
+                )}
             </View>
 
             {/* Options */}
             <View style={styles.optionsContainer}>
-                <TouchableOpacity style={styles.optionCard}>
+                <TouchableOpacity style={styles.optionCard} onPress={() => setModalVisible(true)}>
                     <Text style={styles.optionText}>Rename Device</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.optionCard} onPress={() => navigation.navigate("UsageReport")}>
+                <TouchableOpacity style={styles.optionCard} onPress={() => navigation.navigate("UsageReport", { trackId: device?.child?.id })}>
                     <Text style={styles.optionText}>View Usage Report</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.optionCard} onPress={() => navigation.navigate("Appblocking")}>
+                <TouchableOpacity style={styles.optionCard} onPress={() => navigation.navigate("Appblocking", { trackId: device?.child?.id    })}>
                     <Text style={styles.optionText}>Manage App Blocking</Text>
                 </TouchableOpacity>
             </View>
@@ -52,6 +100,30 @@ const DeviceDetails = () => {
             <TouchableOpacity style={styles.removeButton}>
                 <Text style={styles.removeButtonText}>Remove Device</Text>
             </TouchableOpacity>
+
+            {/* Rename Modal */}
+            <Modal transparent animationType="fade" visible={modalVisible} onRequestClose={() => setModalVisible(false)}>
+                <View style={styles.modalOverlay}>
+                    <View style={styles.modalBox}>
+                        <Text style={styles.modalTitle}>Rename Device</Text>
+                        <TextInput
+                            style={styles.modalInput}
+                            value={newName}
+                            onChangeText={setNewName}
+                            placeholder="Enter new name"
+                            placeholderTextColor="#aaa"
+                        />
+                        <View style={styles.modalButtons}>
+                            <TouchableOpacity style={styles.cancelBtn} onPress={() => setModalVisible(false)}>
+                                <Text style={styles.cancelText}>Cancel</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity style={styles.saveBtn} onPress={handleRename} disabled={saving}>
+                                {saving ? <ActivityIndicator color="#fff" size="small" /> : <Text style={styles.saveText}>Save</Text>}
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </View>
+            </Modal>
         </ScrollView>
         </SafeAreaView>
     );
@@ -142,5 +214,59 @@ const styles = StyleSheet.create({
         color: '#fff',
         fontSize: 16,
         fontWeight: 'bold',
+    },
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.5)',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    modalBox: {
+        backgroundColor: '#fff',
+        borderRadius: 16,
+        padding: 24,
+        width: '85%',
+    },
+    modalTitle: {
+        fontSize: 18,
+        fontWeight: '700',
+        color: '#333',
+        marginBottom: 16,
+    },
+    modalInput: {
+        borderWidth: 1,
+        borderColor: '#d1d5db',
+        borderRadius: 10,
+        paddingHorizontal: 14,
+        paddingVertical: 10,
+        fontSize: 16,
+        color: '#333',
+        marginBottom: 20,
+    },
+    modalButtons: {
+        flexDirection: 'row',
+        justifyContent: 'flex-end',
+        gap: 10,
+    },
+    cancelBtn: {
+        paddingVertical: 10,
+        paddingHorizontal: 20,
+        borderRadius: 10,
+        borderWidth: 1,
+        borderColor: '#ccc',
+    },
+    cancelText: {
+        color: '#555',
+        fontWeight: '600',
+    },
+    saveBtn: {
+        paddingVertical: 10,
+        paddingHorizontal: 20,
+        borderRadius: 10,
+        backgroundColor: '#6d16a2',
+    },
+    saveText: {
+        color: '#fff',
+        fontWeight: '600',
     },
 });
