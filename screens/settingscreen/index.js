@@ -95,7 +95,7 @@ const SettingsScreen = () => {
                         </View>
                         <Ionicons name="chevron-forward" size={18} color="#ccc" />
                     </TouchableOpacity>
-                    <TouchableOpacity style={styles.optionCard} onPress={() => navigation.navigate("chatScreen")}>
+                    {/* <TouchableOpacity style={styles.optionCard} onPress={() => navigation.navigate("chatScreen")}>
                         <View style={styles.optionLeft}>
                             <Ionicons name="chatbubble-outline" size={22} color="#6d16a2" />
                             <Text style={styles.optionText}>Chat</Text>
@@ -129,7 +129,7 @@ const SettingsScreen = () => {
                             <Text style={styles.optionText}>My Recording</Text>
                         </View>
                         <Ionicons name="chevron-forward" size={18} color="#ccc" />
-                    </TouchableOpacity>
+                    </TouchableOpacity> */}
                     <TouchableOpacity style={styles.optionCard}>
                         <View style={styles.optionLeft}>
                             <Ionicons name="help-circle-outline" size={22} color="#6d16a2" />

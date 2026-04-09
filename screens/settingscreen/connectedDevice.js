@@ -1,65 +1,33 @@
 import { useNavigation } from "@react-navigation/native";
 import React, { useState, useCallback } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image, ActivityIndicator } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator } from "react-native";
 import instance from "../../api/api_instance";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useFocusEffect } from "@react-navigation/native";
-const dummyDevices = [
-    {
-        id: "1",
-        name: "Jhon’s Phone",
-        type: "Kid's phone",
-        status: "Connected",
-        image: require("../../assets/logoicons.png"),
-    },
-    {
-        id: "2",
-        name: "Jane’s Tablet",
-        type: "Kid's tablet",
-        status: "Disconnected",
-        image: require("../../assets/logoicons.png"),
-    },
-    {
-        id: "3",
-        name: "Dad's Phone",
-        type: "Parent's phone",
-        status: "Connected",
-        image: require("../../assets/logoicons.png"),
-    },
-];
+import Ionicons from "react-native-vector-icons/Ionicons";
 
 const ConnectedDevice = ({ route }) => {
     const navigation = useNavigation();
     const familyId = route.params?.familyId;
     const [loading, setLoading] = useState(true);
     const [devices, setDevices] = useState([]);
-    // console.log(devices);
+
     const getDeviceList = async () => {
         try {
             setLoading(true);
             const storedToken = await AsyncStorage.getItem('accessToken');
             const response = await instance.get(`/children?familyId=${familyId}`, {
-                headers: {
-                    Authorization: `Bearer ${storedToken}`,
-                    "Content-Type": "application/json",
-                },
+                headers: { Authorization: `Bearer ${storedToken}` },
             });
-            // console.log(response,"response")
-            setDevices(response?.data?.data);
-            setLoading(false);
-
+            setDevices(response?.data?.data || []);
         } catch (error) {
-            //   console.error('User Retrieval Error:', error.response ? error.response.data : error.message);
+        } finally {
+            setLoading(false);
         }
     };
-    useFocusEffect(
-        useCallback(() => {
-            getDeviceList();
-        }, [])
-    );
 
-
+    useFocusEffect(useCallback(() => { getDeviceList(); }, []));
 
     if (loading) return (
         <SafeAreaView style={styles.container}>
@@ -71,111 +39,102 @@ const ConnectedDevice = ({ route }) => {
 
     return (
         <SafeAreaView style={styles.container}>
-            <ScrollView>
-                {/* Header */}
-                <View style={styles.header}>
-                    <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-                        <Image
-                            source={require("../../assets/angle-small-left.png")}
-                            style={{ width: 35, height: 35 }}
-                            resizeMode="contain"
-                        />
-                    </TouchableOpacity>
-                    <Text style={styles.headerText}>Connected Devices</Text>
-                    <View style={{ width: 24 }} />
-                </View>
+            <View style={styles.header}>
+                <TouchableOpacity onPress={() => navigation.goBack()}>
+                    <Ionicons name="arrow-back" size={26} color="#000" />
+                </TouchableOpacity>
+                <Text style={styles.headerText}>Connected Devices</Text>
+                <View style={{ width: 26 }} />
+            </View>
 
-                {/* Device List */}
-                <View style={styles.listContainer}>
-                    {devices?.map((device, index) => (
-                        <TouchableOpacity key={index} style={styles.deviceCard} onPress={() => navigation.navigate('DeviceDetails', { device })}>
-                            <Image source={require("../../assets/logoicons.png")} style={styles.deviceImage} />
-                            <View style={styles.deviceInfo}>
-                                <Text style={styles.deviceName}>{device?.child?.deviceBrand}</Text>
-                                <Text style={styles.deviceName}>{device?.child?.name}</Text>
-                                {/* <Text style={styles.deviceType}>{device?.child?.deviceId}</Text> */}
+            <ScrollView contentContainerStyle={styles.listContainer}>
+                <Text style={styles.countText}>{devices.length} device{devices.length !== 1 ? 's' : ''} connected</Text>
+
+                {devices?.map((device, index) => (
+                    <TouchableOpacity
+                        key={index}
+                        style={styles.deviceCard}
+                        onPress={() => navigation.navigate('DeviceDetails', { device })}
+                    >
+                        <View style={styles.iconWrapper}>
+                            <Ionicons name="phone-portrait-outline" size={26} color="#6d16a2" />
+                        </View>
+                        <View style={styles.deviceInfo}>
+                            <Text style={styles.deviceBrand}>{device?.child?.deviceBrand || 'Unknown Device'}</Text>
+                            <Text style={styles.deviceName}>{device?.child?.name || 'No name'}</Text>
+                            <View style={styles.statusRow}>
+                                <View style={styles.statusDot} />
+                                <Text style={styles.statusText}>Connected</Text>
                             </View>
-                            {/* <View style={styles.statusContainer}>
-                        <View style={[styles.statusDot, { backgroundColor: device.status === 'Connected' ? '#2ecc71' : '#e74c3c' }]} />
-                        <Text style={styles.deviceStatus}>{device.status}</Text>
-                    </View> */}
-                        </TouchableOpacity>
-                    ))}
-                </View>
+                        </View>
+                        <Ionicons name="chevron-forward" size={20} color="#ccc" />
+                    </TouchableOpacity>
+                ))}
+
+                {devices.length === 0 && (
+                    <View style={styles.emptyWrapper}>
+                        <Ionicons name="phone-portrait-outline" size={60} color="#ccc" />
+                        <Text style={styles.emptyText}>No devices connected</Text>
+                    </View>
+                )}
             </ScrollView>
         </SafeAreaView>
     );
-}
+};
 
 export default ConnectedDevice;
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: "#f0e6f7",
-    },
+    container: { flex: 1, backgroundColor: "#f0e6f7" },
     header: {
-        padding: 20,
-        alignItems: "center",
         flexDirection: "row",
+        alignItems: "center",
         justifyContent: "space-between",
+        paddingHorizontal: 20,
+        paddingVertical: 15,
     },
-    headerText: {
-        fontSize: 22,
-        fontWeight: "600",
-        color: "#000",
-    },
-    listContainer: {
-        marginHorizontal: 15,
-        marginTop: 10,
+    headerText: { fontSize: 22, fontWeight: "600", color: "#000" },
+    loader: { flex: 1, justifyContent: "center", alignItems: "center" },
+    listContainer: { padding: 16 },
+    countText: {
+        fontSize: 13,
+        color: "#888",
+        marginBottom: 12,
+        marginLeft: 4,
     },
     deviceCard: {
         flexDirection: "row",
         alignItems: "center",
         backgroundColor: "#fff",
-        padding: 15,
-        marginBottom: 10,
-        borderRadius: 12,
-        shadowColor: "#000",
-        shadowOpacity: 0.05,
-        shadowRadius: 5,
-        elevation: 2,
+        padding: 16,
+        marginBottom: 12,
+        borderRadius: 16,
+        shadowColor: "#6d16a2",
+        shadowOpacity: 0.08,
+        shadowRadius: 8,
+        elevation: 3,
     },
-    deviceImage: {
-        width: 50,
-        height: 50,
-        borderRadius: 25,
-        marginRight: 15,
-    },
-    deviceInfo: {
-        flex: 1,
-    },
-    deviceName: {
-        fontSize: 16,
-        fontWeight: "bold",
-        color: "#333",
-    },
-    deviceType: {
-        fontSize: 14,
-        color: "#7f7f7f",
-    },
-    statusContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-    },
-    statusDot: {
-        width: 8,
-        height: 8,
-        borderRadius: 4,
-        marginRight: 6,
-    },
-    deviceStatus: {
-        fontSize: 14,
-        color: "#555",
-    },
-    loader: {
-        flex: 1,
-        justifyContent: "center",
+    iconWrapper: {
+        width: 52,
+        height: 52,
+        borderRadius: 14,
+        backgroundColor: "#f3e8ff",
         alignItems: "center",
+        justifyContent: "center",
+        marginRight: 14,
     },
+    deviceInfo: { flex: 1 },
+    deviceBrand: { fontSize: 15, fontWeight: "700", color: "#222" },
+    deviceName: { fontSize: 13, color: "#888", marginTop: 2 },
+    statusRow: { flexDirection: "row", alignItems: "center", marginTop: 6 },
+    statusDot: {
+        width: 7,
+        height: 7,
+        borderRadius: 4,
+        backgroundColor: "#22c55e",
+        marginRight: 5,
+    },
+    statusText: { fontSize: 12, color: "#22c55e", fontWeight: "600" },
+    emptyWrapper: { alignItems: "center", marginTop: 80 },
+    emptyText: { fontSize: 15, color: "#aaa", marginTop: 12 },
 });
