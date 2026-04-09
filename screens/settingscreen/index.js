@@ -1,11 +1,12 @@
 import { useNavigation } from "@react-navigation/native";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { View, Text, StyleSheet, Image, TouchableOpacity, ScrollView, ActivityIndicator } from "react-native";
 import instance from "../../api/api_instance";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useAuth } from "../../context/AuthContext";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Ionicons from "react-native-vector-icons/Ionicons";
+import { useFocusEffect } from "@react-navigation/native";
 
 const SettingsScreen = () => {
     const navigation = useNavigation();
@@ -36,9 +37,11 @@ const SettingsScreen = () => {
             //   console.error('User Retrieval Error:', error.response ? error.response.data : error.message);
         }
     };
-    useEffect(() => {
-        getUser();
-    }, []);
+    useFocusEffect(
+        useCallback(() => {
+            getUser();
+        }, [])
+    );
 
     return (
         <SafeAreaView style={styles.container}>

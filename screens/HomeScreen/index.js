@@ -1,5 +1,6 @@
 import { useNavigation } from "@react-navigation/native";
-import React, { useEffect, useState } from "react";
+import { useFocusEffect } from "@react-navigation/native";
+import React, { useEffect, useState, useCallback } from "react";
 import {
   View,
   Text,
@@ -108,9 +109,11 @@ console.log(blockedPackages)
     setUser(user.data.data);
   }
 
-  useEffect(() => {
-    getuserData();
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      getuserData();
+    }, [])
+  );
 
   const requestScreenCapturePermission = async () => {
   const token = await AsyncStorage.getItem("accessToken");
