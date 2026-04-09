@@ -11,6 +11,7 @@ import CreateAccount from "./screens/CreateAccount";
 import CircleCode from "./screens/CircleCode";
 import KidsProfileSetup from "./screens/KidsProfileSetup";
 import Monitor from "./screens/Monitor";
+import MyProfile from "./screens/settingscreen/MyProfile";
 import Sucessmessage from "./screens/CreateAccount/sucessmessage";
 
 import BottomNavigation from "./navigation/BottomNavigation";
@@ -46,6 +47,7 @@ function Navigator() {
             <Stack.Screen name="Appblocking" component={Appblocking} />
             <Stack.Screen name="ConnectedDevice" component={ConnectedDevice} />
             <Stack.Screen name="DeviceDetails" component={DeviceDetails} />
+            <Stack.Screen name="MyProfile" component={MyProfile} />
             <Stack.Screen name="CircleCode" component={CircleCode} />
           </>
         ) : (

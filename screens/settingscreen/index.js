@@ -74,10 +74,10 @@ const SettingsScreen = () => {
 
                 {/* Settings Options */}
                 <View style={styles.optionGroup}>
-                    <TouchableOpacity style={styles.optionCard}>
+                    <TouchableOpacity style={styles.optionCard} onPress={() => navigation.navigate("MyProfile", { user })}>
                         <View style={styles.optionLeft}>
-                            <Ionicons name="phone-portrait-outline" size={22} color="#6d16a2" />
-                            <Text style={styles.optionText}>My Device</Text>
+                            <Ionicons name="person-outline" size={22} color="#6d16a2" />
+                            <Text style={styles.optionText}>My Profile</Text>
                         </View>
                         <Ionicons name="chevron-forward" size={18} color="#ccc" />
                     </TouchableOpacity>
