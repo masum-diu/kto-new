@@ -26,13 +26,13 @@ const HomeScreen = () => {
   const [reportLoading, setReportLoading] = useState(false);
   const [appBlockModal, setAppBlockModal] = useState(false);
   const [blockedPackages, setBlockedPackages] = useState([]);
-  
+
   const [screenTimeModal, setScreenTimeModal] = useState(false);
   const [appTimeLimitModal, setAppTimeLimitModal] = useState(false);
   const [screenTimeLimit, setScreenTimeLimit] = useState(null);
   const [appLimits, setAppLimits] = useState({});
   const [policyLoading, setPolicyLoading] = useState(false);
-console.log(blockedPackages)
+  console.log(blockedPackages)
   const saveScreenTimeLimit = async () => {
     try {
       setPolicyLoading(true);
@@ -116,282 +116,342 @@ console.log(blockedPackages)
   );
 
   const requestScreenCapturePermission = async () => {
-  const token = await AsyncStorage.getItem("accessToken");
-  console.log(selectedChild);
+    const token = await AsyncStorage.getItem("accessToken");
+    console.log(selectedChild);
 
-  try {
-   
-     if (!selectedChild) {
-      alert("Please select a child device first.");
-      return;
+    try {
+
+      if (!selectedChild) {
+        alert("Please select a child device first.");
+        return;
+      }
+      else { navigation.navigate("ScreenMirroring", { selectedChild }) }
+      navigation.navigate("ScreenMirroring", { selectedChild })
+    } catch (error) {
+      console.error(
+        "Error requesting screen capture permission:",
+        error?.response?.data || error.message
+      );
     }
-    else{ navigation.navigate("ScreenMirroring",{selectedChild})}
-     navigation.navigate("ScreenMirroring",{selectedChild})
-  } catch (error) {
-    console.error(
-      "Error requesting screen capture permission:",
-      error?.response?.data || error.message
-    );
-  }
-};
+  };
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView showsVerticalScrollIndicator={false}>
-        {/* Header */}
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation.navigate("settingscreen")}>
-            <Ionicons name="settings-outline" size={28} color="#fff" />
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.familyBtn} onPress={() => setVisible(true)}>
-            <Text style={styles.familyText}>{user?.familyName}</Text>
-          
-          </TouchableOpacity>
-          <Modal transparent visible={visible} animationType="slide">
-            <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setVisible(false)}>
-              <View style={styles.modalBox}>
-                <View style={styles.modalHandle} />
-                <Text style={styles.modalTitle}>Select Device</Text>
-                <FlatList
-                  data={user?.children}
-                  keyExtractor={(item) => item?.id?.toString()}
-                  renderItem={({ item }) => (
-                    <TouchableOpacity
-                      style={[
-                        styles.deviceItem,
-                        selectedChild === item.child?.trackId && styles.deviceItemActive
-                      ]}
-                      onPress={() => {
-                        setSelectedChild(item.child?.trackId);
-                        setSelectedChildid(item.child?.id);
-                        fetchActivities(item.child?.id);
-                        setVisible(false);
-                      }}
-                    >
-                      <View style={[
-                        styles.deviceItemIcon,
-                        selectedChild === item.child?.trackId && styles.deviceItemIconActive
-                      ]}>
-                        <Ionicons name="phone-portrait-outline" size={20}
-                          color={selectedChild === item.child?.trackId ? "#fff" : "#6a1b9a"} />
-                      </View>
-                      <View style={styles.deviceItemInfo}>
-                        <Text style={styles.deviceItemBrand}>{item.child?.deviceBrand || 'Unknown'}</Text>
-                        <Text style={styles.deviceItemId}>{item.child?.name}</Text>
-                      </View>
-                      {selectedChild === item.child?.trackId && (
-                        <Ionicons name="checkmark-circle" size={22} color="#6a1b9a" />
-                      )}
-                    </TouchableOpacity>
-                  )}
-                />
-              </View>
-            </TouchableOpacity>
-          </Modal>
-
-          <TouchableOpacity onPress={() => navigation.navigate("NotificationScreen")}>
-            <Ionicons name="notifications-outline" size={28} color="#fff" />
-          </TouchableOpacity>
-        </View>
-
-        {/* Profile Card */}
-        <View style={styles.profileCard}>
-          <View style={styles.profileInfo}>
-            <View style={styles.avatarWrapper}>
-              <Image source={require("../../assets/logoicons.png")} style={styles.avatar} />
-              <View style={styles.onlineBadge} />
+      <FlatList
+        showsVerticalScrollIndicator={false}
+        data={[1]}
+        keyExtractor={() => 'main'}
+        ListHeaderComponent={
+          <View>
+            {/* Header */}
+            <View style={styles.header}>
+              <TouchableOpacity onPress={() => navigation.navigate("settingscreen")}>
+                <Ionicons name="settings-outline" size={28} color="#fff" />
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.familyBtn} onPress={() => setVisible(true)}>
+                <Text style={styles.familyText}>{user?.familyName}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => navigation.navigate("NotificationScreen")}>
+                <Ionicons name="notifications-outline" size={28} color="#fff" />
+              </TouchableOpacity>
             </View>
-            <View>
-              <Text style={styles.name}>{user?.name || 'Welcome'}</Text>
-              <Text style={styles.familyLabel}>{user?.familyName} Family</Text>
-              <View style={styles.onlineRow}>
-                <Ionicons name="wifi" size={12} color="#4ade80" />
-                <Text style={styles.onlineText}>Online</Text>
-              </View>
-            </View>
-          </View>
-          <TouchableOpacity style={styles.addDeviceBtn} onPress={() => setVisible(true)}>
-            <Ionicons name="add" size={22} color="#6a1b9a" />
-          </TouchableOpacity>
-        </View>
-
-        {/* User Report */}
-        <View style={styles.card}>
-          <Text style={styles.sectionTitle}>User Report</Text>
-          {!selectedChild ? (
-            <Text style={styles.smallText}>Select a device to view report</Text>
-          ) : reportLoading ? (
-            <ActivityIndicator size="small" color="#6a1b9a" style={{ marginVertical: 10 }} />
-          ) : activities.length === 0 ? (
-            <Text style={styles.smallText}>No activity data available</Text>
-          ) : (
-            activities.slice(0, 4).map((item, index) => {
-              const maxMin = Math.max(...activities.map(a => a.duration_minutes), 1);
-              const pct = Math.round((item.duration_minutes / maxMin) * 100);
-              return (
-                <View key={index} style={{ marginBottom: 10 }}>
-                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 }}>
-                    <Text style={styles.smallText}>{item.app_name}</Text>
-                    <Text style={styles.smallText}>{item.duration_minutes >= 60 ? `${Math.floor(item.duration_minutes / 60)}h ${item.duration_minutes % 60}m` : `${item.duration_minutes}m`}</Text>
-                  </View>
-                  <View style={styles.progressBar}>
-                    <View style={[styles.progressFill, { width: `${pct}%` }]} />
+            {/* Profile Card */}
+            <View style={styles.profileCard}>
+              <View style={styles.profileInfo}>
+                <View style={styles.avatarWrapper}>
+                  <Image source={require("../../assets/logoicons.png")} style={styles.avatar} />
+                  <View style={styles.onlineBadge} />
+                </View>
+                <View>
+                  <Text style={styles.name}>{user?.name || 'Welcome'}</Text>
+                  <Text style={styles.familyLabel}>{user?.familyName} Family</Text>
+                  <View style={styles.onlineRow}>
+                    <Ionicons name="wifi" size={12} color="#4ade80" />
+                    <Text style={styles.onlineText}>Online</Text>
                   </View>
                 </View>
-              );
-            })
-          )}
-        </View>
-
-        {/* Device Activity */}
-        <View style={styles.card}>
-          <Text style={styles.sectionTitle}>Device Activity</Text>
-          <View style={styles.iconRow}>
-            <TouchableOpacity style={styles.iconBox} onPress={() => {
-              if (!selectedChild) { alert('Select a device first'); return; }
-              setScreenTimeModal(true);
-            }}>
-              <Ionicons name="time-outline" size={28} color="#6a1b9a" />
-              <Text style={styles.iconText}>Screen Time Limits</Text>
-            </TouchableOpacity>
-          
-            <TouchableOpacity style={styles.iconBox} onPress={() => {
-              if (!selectedChild) { alert('Select a device first'); return; }
-              navigation.navigate("Appblocking", { trackId: selectedChildid    })
-            }}>
-              <Ionicons name="shield-checkmark-outline" size={28} color="#6a1b9a" />
-              <Text style={styles.iconText}>App Rules</Text>
-            </TouchableOpacity>
+              </View>
+              <TouchableOpacity style={styles.addDeviceBtn} onPress={() => setVisible(true)}>
+                <Ionicons name="add" size={22} color="#6a1b9a" />
+              </TouchableOpacity>
+            </View>
           </View>
-        </View>
+        }
+        renderItem={() => (
+          <View>
+            {/* User Report */}
+            <View style={styles.card}>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                <Text style={styles.sectionTitle}>User Report</Text>
+                {selectedChild && activities.length > 0 && (
+                  <Text style={{ fontSize: 12, color: '#6a1b9a' }}>{activities.length} apps</Text>
+                )}
+              </View>
+              {!selectedChild ? (
+                <Text style={styles.smallText}>Select a device to view report</Text>
+              ) : reportLoading ? (
+                <ActivityIndicator size="small" color="#6a1b9a" style={{ marginVertical: 10 }} />
+              ) : activities.length === 0 ? (
+                <Text style={styles.smallText}>No activity data available</Text>
+              ) : (
+                activities?.slice(0, 4)?.map((item, index) => {
+                  const maxMin = Math.max(...activities.map(a => a.duration_minutes), 1);
+                  const pct = Math.round((item.duration_minutes / maxMin) * 100);
+                  return (
+                    <View key={index} style={{ marginBottom: 10 }}>
+                      <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 }}>
+                        <Text style={styles.smallText}>{item.app_name}</Text>
+                        <Text style={styles.smallText}>{item.duration_minutes >= 60 ? `${Math.floor(item.duration_minutes / 60)}h ${item.duration_minutes % 60}m` : `${item.duration_minutes}m`}</Text>
+                      </View>
+                      <View style={styles.progressBar}>
+                        <View style={[styles.progressFill, { width: `${pct}%` }]} />
+                      </View>
+                    </View>
+                  );
+                })
+              )}
+            </View>
 
-        {/* Screen Time Limit Modal */}
-        <Modal transparent visible={screenTimeModal} animationType="slide">
-          <View style={styles.modalOverlay}>
-            <TouchableOpacity style={{ flex: 1 }} activeOpacity={1} onPress={() => setScreenTimeModal(false)} />
-            <View style={styles.modalBox}>
-              <View style={styles.modalHandle} />
-              <Text style={styles.modalTitle}>Screen Time & App Control</Text>
-              <Text style={styles.smallText}>Daily screen time limit</Text>
-              <View style={styles.limitRow}>
-                {[30, 60, 90, 120, 180, 240].map(min => (
-                  <TouchableOpacity
-                    key={min}
-                    style={[styles.limitBtn, screenTimeLimit === min && styles.limitBtnActive]}
-                    onPress={() => setScreenTimeLimit(min)}
-                  >
-                    <Text style={[styles.limitBtnText, screenTimeLimit === min && styles.limitBtnTextActive]}>
-                      {min >= 60 ? `${min / 60}h` : `${min}m`}
-                    </Text>
+            {/* Device Activity */}
+            <View style={styles.card}>
+              <Text style={styles.sectionTitle}>Device Activity</Text>
+              <View style={styles.iconRow}>
+                <TouchableOpacity style={styles.iconBox} onPress={() => {
+                  if (!selectedChild) { alert('Select a device first'); return; }
+                  setScreenTimeModal(true);
+                }}>
+                  <Ionicons name="time-outline" size={28} color="#6a1b9a" />
+                  <Text style={styles.iconText}>Screen Time Limits</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity style={styles.iconBox} onPress={() => {
+                  if (!selectedChild) { alert('Select a device first'); return; }
+                  navigation.navigate("Appblocking", { trackId: selectedChildid })
+                }}>
+                  <Ionicons name="shield-checkmark-outline" size={28} color="#6a1b9a" />
+                  <Text style={styles.iconText}>App Rules</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            {/* Screen Time Limit Modal */}
+            <Modal transparent visible={screenTimeModal} animationType="slide">
+              <View style={styles.modalOverlay}>
+                <TouchableOpacity style={{ flex: 1 }} activeOpacity={1} onPress={() => setScreenTimeModal(false)} />
+                <View style={styles.modalBox}>
+                  <View style={styles.modalHandle} />
+                  <Text style={styles.modalTitle}>Screen Time & App Control</Text>
+                  <Text style={styles.smallText}>Daily screen time limit</Text>
+                  <View style={styles.limitRow}>
+                    {[30, 60, 90, 120, 180, 240].map(min => (
+                      <TouchableOpacity
+                        key={min}
+                        style={[styles.limitBtn, screenTimeLimit === min && styles.limitBtnActive]}
+                        onPress={() => setScreenTimeLimit(min)}
+                      >
+                        <Text style={[styles.limitBtnText, screenTimeLimit === min && styles.limitBtnTextActive]}>
+                          {min >= 60 ? `${min / 60}h` : `${min}m`}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                  <TextInput
+                    style={styles.customInput}
+                    placeholder="Custom minutes (e.g. 150)"
+                    placeholderTextColor="#aaa"
+                    keyboardType="numeric"
+                    value={screenTimeLimit ? String(screenTimeLimit) : ''}
+                    onChangeText={v => setScreenTimeLimit(Number(v))}
+                  />
+                  <Text style={[styles.smallText, { marginBottom: 8 }]}>Block Apps</Text>
+                  <FlatList
+                    data={activities}
+                    keyExtractor={(_, index) => index.toString()}
+                    style={{ maxHeight: 300 }}
+                    showsVerticalScrollIndicator={true}
+                    renderItem={({ item }) => (
+                      <View style={styles.appLimitRow}>
+                        <View style={styles.appIconWrapper2}>
+                          <Ionicons name="phone-portrait-outline" size={18} color="#6a1b9a" />
+                        </View>
+                        <View style={{ flex: 1 }}>
+                          <Text style={styles.appLimitName}>{item.app_name}</Text>
+                          <Text style={{ fontSize: 11, color: '#aaa' }}>{item.package_name}</Text>
+                        </View>
+                        <Switch
+                          value={blockedPackages.includes(item.package_name)}
+                          onValueChange={(val) => {
+                            if (val) setBlockedPackages(prev => [...prev, item.package_name]);
+                            else setBlockedPackages(prev => prev.filter(p => p !== item.package_name));
+                          }}
+                          thumbColor="#fff"
+                          trackColor={{ false: '#ccc', true: '#6a1b9a' }}
+                        />
+                      </View>
+                    )}
+                  />
+                  <TouchableOpacity style={styles.saveBtn} onPress={async () => {
+                    await saveScreenTimeLimit();
+                    // await saveBlockedApps();
+                  }}>
+                    {policyLoading ? <ActivityIndicator color="#fff" size="small" /> : <Text style={styles.saveBtnText}>Save All</Text>}
                   </TouchableOpacity>
-                ))}
+                </View>
               </View>
-              <TextInput
-                style={styles.customInput}
-                placeholder="Custom minutes (e.g. 150)"
-                placeholderTextColor="#aaa"
-                keyboardType="numeric"
-                value={screenTimeLimit ? String(screenTimeLimit) : ''}
-                onChangeText={v => setScreenTimeLimit(Number(v))}
-              />
-              <Text style={[styles.smallText, { marginBottom: 8 }]}>Block Apps</Text>
-              <ScrollView style={{ maxHeight: 300 }} nestedScrollEnabled={true} showsVerticalScrollIndicator={true}>
-                {activities.map((item, index) => (
-                  <View key={index} style={styles.appLimitRow}>
-                    <View style={styles.appIconWrapper2}>
-                      <Ionicons name="phone-portrait-outline" size={18} color="#6a1b9a" />
-                    </View>
-                    <View style={{ flex: 1 }}>
-                      <Text style={styles.appLimitName}>{item.app_name}</Text>
-                      <Text style={{ fontSize: 11, color: '#aaa' }}>{item.package_name}</Text>
-                    </View>
-                    <Switch
-                      value={blockedPackages.includes(item.package_name)}
-                      onValueChange={(val) => {
-                        if (val) setBlockedPackages(prev => [...prev, item.package_name]);
-                        else setBlockedPackages(prev => prev.filter(p => p !== item.package_name));
-                      }}
-                      thumbColor="#fff"
-                      trackColor={{ false: '#ccc', true: '#6a1b9a' }}
-                    />
-                  </View>
-                ))}
-              </ScrollView>
-              <TouchableOpacity style={styles.saveBtn} onPress={async () => {
-                await saveScreenTimeLimit();
-                // await saveBlockedApps();
-              }}>
-                {policyLoading ? <ActivityIndicator color="#fff" size="small" /> : <Text style={styles.saveBtnText}>Save All</Text>}
+            </Modal>
+
+            {/* App Block Modal */}
+            <Modal transparent visible={appBlockModal} animationType="slide">
+              <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setAppBlockModal(false)}>
+                <View style={styles.modalBox}>
+                  <View style={styles.modalHandle} />
+                  <Text style={styles.modalTitle}>Block Apps</Text>
+                  <Text style={styles.smallText}>Toggle to block/unblock apps</Text>
+                  <ScrollView style={{ maxHeight: 320 }}>
+                    {activities.map((item, index) => (
+                      <View key={index} style={styles.appLimitRow}>
+                        <View style={styles.appIconWrapper2}>
+                          <Ionicons name="phone-portrait-outline" size={18} color="#6a1b9a" />
+                        </View>
+                        <View style={{ flex: 1 }}>
+                          <Text style={styles.appLimitName}>{item.app_name}</Text>
+                          <Text style={{ fontSize: 11, color: '#aaa' }}>{item.package_name}</Text>
+                        </View>
+                        <Switch
+                          value={blockedPackages.includes(item.package_name)}
+                          onValueChange={(val) => {
+                            if (val) setBlockedPackages(prev => [...prev, item.package_name]);
+                            else setBlockedPackages(prev => prev.filter(p => p !== item.package_name));
+                          }}
+                          thumbColor="#fff"
+                          trackColor={{ false: '#ccc', true: '#6a1b9a' }}
+                        />
+                      </View>
+                    ))}
+                  </ScrollView>
+                  <TouchableOpacity style={styles.saveBtn} >
+                    {policyLoading ? <ActivityIndicator color="#fff" size="small" /> : <Text style={styles.saveBtnText}>Save</Text>}
+                  </TouchableOpacity>
+                </View>
               </TouchableOpacity>
+            </Modal>
+
+
+
+            {/* Live Monitoring */}
+            <View style={styles.card}>
+              <Text style={styles.sectionTitle}>Live Monitoring</Text>
+              <View style={styles.iconRow}>
+                <TouchableOpacity onPress={() => navigation.navigate("Location")}>
+                  <View style={styles.iconBox}>
+                    <Ionicons name="location-outline" size={28} color="#6a1b9a" />
+                    <Text style={styles.iconText}>Location tracking</Text>
+                  </View>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => navigation.navigate("OneWayAudio")}>
+                  <View style={styles.iconBox}>
+                    <Ionicons name="mic-outline" size={28} color="#6a1b9a" />
+                    <Text style={styles.iconText}>One-Way Audio</Text>
+                  </View>
+                </TouchableOpacity>
+              </View>
             </View>
           </View>
-        </Modal>
+        )}
+        contentContainerStyle={{ paddingBottom: 100 }}
+      />
 
-        {/* App Block Modal */}
-        <Modal transparent visible={appBlockModal} animationType="slide">
-          <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setAppBlockModal(false)}>
-            <View style={styles.modalBox}>
-              <View style={styles.modalHandle} />
-              <Text style={styles.modalTitle}>Block Apps</Text>
-              <Text style={styles.smallText}>Toggle to block/unblock apps</Text>
-              <ScrollView style={{ maxHeight: 320 }}>
-                {activities.map((item, index) => (
-                  <View key={index} style={styles.appLimitRow}>
-                    <View style={styles.appIconWrapper2}>
-                      <Ionicons name="phone-portrait-outline" size={18} color="#6a1b9a" />
-                    </View>
-                    <View style={{ flex: 1 }}>
-                      <Text style={styles.appLimitName}>{item.app_name}</Text>
-                      <Text style={{ fontSize: 11, color: '#aaa' }}>{item.package_name}</Text>
-                    </View>
-                    <Switch
-                      value={blockedPackages.includes(item.package_name)}
-                      onValueChange={(val) => {
-                        if (val) setBlockedPackages(prev => [...prev, item.package_name]);
-                        else setBlockedPackages(prev => prev.filter(p => p !== item.package_name));
-                      }}
-                      thumbColor="#fff"
-                      trackColor={{ false: '#ccc', true: '#6a1b9a' }}
-                    />
+      {/* Device Select Modal */}
+      <Modal transparent visible={visible} animationType="slide">
+        <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setVisible(false)}>
+          <View style={styles.modalBox}>
+            <View style={styles.modalHandle} />
+            <Text style={styles.modalTitle}>Select Device</Text>
+            <FlatList
+              data={user?.children}
+              keyExtractor={(item) => item?.id?.toString()}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  style={[styles.deviceItem, selectedChild === item.child?.trackId && styles.deviceItemActive]}
+                  onPress={() => {
+                    setSelectedChild(item.child?.trackId);
+                    setSelectedChildid(item.child?.id);
+                    fetchActivities(item.child?.id);
+                    setVisible(false);
+                  }}
+                >
+                  <View style={[styles.deviceItemIcon, selectedChild === item.child?.trackId && styles.deviceItemIconActive]}>
+                    <Ionicons name="phone-portrait-outline" size={20} color={selectedChild === item.child?.trackId ? "#fff" : "#6a1b9a"} />
                   </View>
-                ))}
-              </ScrollView>
-              <TouchableOpacity style={styles.saveBtn} >
-                {policyLoading ? <ActivityIndicator color="#fff" size="small" /> : <Text style={styles.saveBtnText}>Save</Text>}
-              </TouchableOpacity>
+                  <View style={styles.deviceItemInfo}>
+                    <Text style={styles.deviceItemBrand}>{item.child?.deviceBrand || 'Unknown'}</Text>
+                    <Text style={styles.deviceItemId}>{item.child?.name}</Text>
+                  </View>
+                  {selectedChild === item.child?.trackId && <Ionicons name="checkmark-circle" size={22} color="#6a1b9a" />}
+                </TouchableOpacity>
+              )}
+            />
+          </View>
+        </TouchableOpacity>
+      </Modal>
+
+      {/* Screen Time Modal */}
+      <Modal transparent visible={screenTimeModal} animationType="slide">
+        <View style={styles.modalOverlay}>
+          <TouchableOpacity style={{ flex: 1 }} activeOpacity={1} onPress={() => setScreenTimeModal(false)} />
+          <View style={styles.modalBox}>
+            <View style={styles.modalHandle} />
+            <Text style={styles.modalTitle}>Screen Time & App Control</Text>
+            <Text style={styles.smallText}>Daily screen time limit</Text>
+            <View style={styles.limitRow}>
+              {[30, 60, 90, 120, 180, 240].map(min => (
+                <TouchableOpacity key={min} style={[styles.limitBtn, screenTimeLimit === min && styles.limitBtnActive]} onPress={() => setScreenTimeLimit(min)}>
+                  <Text style={[styles.limitBtnText, screenTimeLimit === min && styles.limitBtnTextActive]}>
+                    {min >= 60 ? `${min / 60}h` : `${min}m`}
+                  </Text>
+                </TouchableOpacity>
+              ))}
             </View>
-          </TouchableOpacity>
-        </Modal>
-
-       
-
-        {/* Live Monitoring */}
-        <View style={styles.card}>
-          <Text style={styles.sectionTitle}>Live Monitoring</Text>
-          <View style={styles.iconRow}>
-            <TouchableOpacity onPress={() => navigation.navigate("Location")}>
-              <View style={styles.iconBox}>
-                <Ionicons name="location-outline" size={28} color="#6a1b9a" />
-                <Text style={styles.iconText}>Location tracking</Text>
-              </View>
-            </TouchableOpacity>
-            {/* <TouchableOpacity onPress={() => requestScreenCapturePermission()}>
-              <View style={styles.iconBox}>
-                <Ionicons name="camera-outline" size={28} color="#6a1b9a" />
-                <Text style={styles.iconText}>Remote Camera</Text>
-              </View>
-            </TouchableOpacity> */}
-            <TouchableOpacity onPress={() => navigation.navigate("OneWayAudio")}>
-              <View style={styles.iconBox}>
-                <Ionicons name="mic-outline" size={28} color="#6a1b9a" />
-                <Text style={styles.iconText}>One-Way Audio</Text>
-              </View>
+            <TextInput
+              style={styles.customInput}
+              placeholder="Custom minutes (e.g. 150)"
+              placeholderTextColor="#aaa"
+              keyboardType="numeric"
+              value={screenTimeLimit ? String(screenTimeLimit) : ''}
+              onChangeText={v => setScreenTimeLimit(Number(v))}
+            />
+            <Text style={[styles.smallText, { marginBottom: 8 }]}>Block Apps</Text>
+            <FlatList
+              data={activities}
+              keyExtractor={(_, i) => i.toString()}
+              style={{ maxHeight: 250 }}
+              renderItem={({ item }) => (
+                <View style={styles.appLimitRow}>
+                  <View style={styles.appIconWrapper2}>
+                    <Ionicons name="phone-portrait-outline" size={18} color="#6a1b9a" />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.appLimitName}>{item.app_name}</Text>
+                    <Text style={{ fontSize: 11, color: '#aaa' }}>{item.package_name}</Text>
+                  </View>
+                  <Switch
+                    value={blockedPackages.includes(item.package_name)}
+                    onValueChange={(val) => {
+                      if (val) setBlockedPackages(prev => [...prev, item.package_name]);
+                      else setBlockedPackages(prev => prev.filter(p => p !== item.package_name));
+                    }}
+                    thumbColor="#fff"
+                    trackColor={{ false: '#ccc', true: '#6a1b9a' }}
+                  />
+                </View>
+              )}
+            />
+            <TouchableOpacity style={styles.saveBtn} onPress={saveScreenTimeLimit}>
+              {policyLoading ? <ActivityIndicator color="#fff" size="small" /> : <Text style={styles.saveBtnText}>Save All</Text>}
             </TouchableOpacity>
           </View>
         </View>
-      </ScrollView>
-
-      {/* Bottom Navigation */}
+      </Modal>
 
     </SafeAreaView>
   );
