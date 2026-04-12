@@ -1,24 +1,27 @@
-import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import React from 'react';
 import { useNavigation } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useAuth } from '../../context/AuthContext';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 
 const SucessMessage = () => {
   const navigation = useNavigation();
 
-  const handleContinue = () => {
-    // Navigate to the next screen in your onboarding flow, for example, 'CircleCode'
-    navigation.navigate('MainHome');
+  const { login } = useAuth();
+
+  const handleContinue = async () => {
+    const token = await AsyncStorage.getItem('accessToken');
+    await login(token);
   };
 
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
-        <Image
-          source={require('../../assets/success-check.png')} // Make sure you have a success image asset
-          style={styles.image}
-          resizeMode="contain"
-        />
+        <View style={styles.iconWrapper}>
+          <Ionicons name="checkmark-circle" size={100} color="#9b1fe8" />
+        </View>
         <Text style={styles.title}>Congratulations!</Text>
         <Text style={styles.subtitle}>
           Your account has been created successfully.
@@ -45,9 +48,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  image: {
-    width: 150,
-    height: 150,
+  iconWrapper: {
     marginBottom: 30,
   },
   title: {
