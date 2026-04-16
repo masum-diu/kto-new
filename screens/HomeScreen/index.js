@@ -32,7 +32,7 @@ const HomeScreen = () => {
   const [screenTimeLimit, setScreenTimeLimit] = useState(null);
   const [appLimits, setAppLimits] = useState({});
   const [policyLoading, setPolicyLoading] = useState(false);
-  console.log(blockedPackages)
+  // console.log(blockedPackages)
   const saveScreenTimeLimit = async () => {
     try {
       setPolicyLoading(true);
