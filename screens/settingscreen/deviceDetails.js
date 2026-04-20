@@ -29,22 +29,51 @@ const DeviceDetails = () => {
     const [keywordInput, setKeywordInput] = useState('');
     const [keywordModal, setKeywordModal] = useState(false);
     const [keywordSaving, setKeywordSaving] = useState(false);
+    const [blockedWebsites, setBlockedWebsites] = useState([]);
+    const [websiteInput, setWebsiteInput] = useState('');
+    const [websiteModal, setWebsiteModal] = useState(false);
+    const [websiteSaving, setWebsiteSaving] = useState(false);
+
+    const saveWebsites = async (updated) => {
+        try {
+            setWebsiteSaving(true);
+            const token = await AsyncStorage.getItem('accessToken');
+            await instance.post('/policies', {
+                trackId: trackidchild,
+                blockedWebsites: updated,
+            }, { headers: { Authorization: `Bearer ${token}` } });
+            setBlockedWebsites(updated);
+        } catch (e) { console.log(e); }
+        finally { setWebsiteSaving(false); }
+    };
+
+    const addWebsite = async () => {
+        const trimmed = websiteInput.trim().toLowerCase();
+        if (!trimmed || blockedWebsites.includes(trimmed)) return;
+        await saveWebsites([...blockedWebsites, trimmed]);
+        setWebsiteInput('');
+    };
+
+    const removeWebsite = async (site) => {
+        await saveWebsites(blockedWebsites.filter(s => s !== site));
+    };
 
     useEffect(() => {
         const fetchDevice = async () => {
             try {
                 setLoading(true);
                 const token = await AsyncStorage.getItem('accessToken');
-                const [childRes, policyRes] = await Promise.all([
+                const [childRes] = await Promise.all([
                     instance.get(`/children/${device?.child?.id}`, { headers: { Authorization: `Bearer ${token}` } }),
-                    instance.get(`/children/${trackId}`, { headers: { Authorization: `Bearer ${token}` } }),
+                    
                 ]);
                 const name = childRes?.data?.data?.name;
                 if (name) { setDeviceName(name); setNewName(name); }
-                const policy = policyRes?.data?.data;
-                console.log("API policy:", policy);
+                const policy = childRes?.data?.data;
+                console.log(policy)
                 setSafeBrowsing(policy?.safe_browsing || false);
                 setKeywords(policy?.policy?.blocked_keywords || []);
+                setBlockedWebsites(policy?.policy?.blocked_websites || []);
             } catch (e) { }
             finally { setLoading(false); }
         };
@@ -71,7 +100,6 @@ const DeviceDetails = () => {
         const trimmed = keywordInput.trim().toLowerCase();
         if (!trimmed || keywords.includes(trimmed)) return;
         const updated = [...keywords, trimmed];
-
         try {
             setKeywordSaving(true);
             const token = await AsyncStorage.getItem('accessToken');
@@ -85,7 +113,29 @@ const DeviceDetails = () => {
         finally { setKeywordSaving(false); }
     };
 
+    const removeKeyword = async (kw) => {
+        const updated = keywords.filter(k => k !== kw);
+        try {
+            const token = await AsyncStorage.getItem('accessToken');
+            await instance.post('/policies', {
+                trackId: trackidchild,
+                blockedKeywords: updated,
+            }, { headers: { Authorization: `Bearer ${token}` } });
+            setKeywords(updated);
+        } catch (e) { console.log(e); }
+    };
+
     
+
+    const handleRemoveDevice = async () => {
+        try {
+            const token = await AsyncStorage.getItem('accessToken');
+            await instance.delete(`/children/${device?.child?.id}`, {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+            navigation.goBack();
+        } catch (e) { console.log(e); }
+    };
 
     return (
         <SafeAreaView style={styles.container}>
@@ -141,6 +191,41 @@ const DeviceDetails = () => {
 
 
 
+                {/* Blocked Websites */}
+                <View style={styles.section}>
+                    <View style={styles.keywordCard}>
+                        <View style={styles.keywordHeader}>
+                            <View style={styles.safeBrowsingLeft}>
+                                <View style={styles.safeBrowsingIcon}>
+                                    <Ionicons name="globe-outline" size={22} color="#6d16a2" />
+                                </View>
+                                <View>
+                                    <Text style={styles.safeBrowsingTitle}>Blocked Websites</Text>
+                                    <Text style={styles.safeBrowsingSubtitle}>{blockedWebsites.length} site{blockedWebsites.length !== 1 ? 's' : ''} blocked</Text>
+                                </View>
+                            </View>
+                            <TouchableOpacity onPress={() => setWebsiteModal(true)} style={styles.addKeywordBtn}>
+                                <Ionicons name="add" size={20} color="#fff" />
+                            </TouchableOpacity>
+                        </View>
+                        {blockedWebsites.length === 0 ? (
+                            <Text style={styles.emptyKeyword}>No websites blocked yet</Text>
+                        ) : (
+                            <View style={styles.keywordList}>
+                                {blockedWebsites.map((site, i) => (
+                                    <View key={i} style={[styles.keywordChip, { backgroundColor: '#fff0f0' }]}>
+                                        <Ionicons name="ban-outline" size={12} color="#e53935" />
+                                        <Text style={[styles.keywordText, { color: '#e53935' }]}>{site}</Text>
+                                        <TouchableOpacity onPress={() => removeWebsite(site)}>
+                                            <Ionicons name="close-circle" size={16} color="#e53935" />
+                                        </TouchableOpacity>
+                                    </View>
+                                ))}
+                            </View>
+                        )}
+                    </View>
+                </View>
+
                 {/* Keyword Detection */}
                 <View style={styles.section}>
                     <View style={styles.keywordCard}>
@@ -165,10 +250,11 @@ const DeviceDetails = () => {
                             <View style={styles.keywordList}>
                                 {keywords.map((kw, i) => (
                                     <View key={i} style={styles.keywordChip}>
+                                        <Ionicons name="search-outline" size={12} color="#6d16a2" />
                                         <Text style={styles.keywordText}>{kw}</Text>
-                                        {/* <TouchableOpacity onPress={() => removeKeyword(kw)}>
+                                        <TouchableOpacity onPress={() => removeKeyword(kw)}>
                                             <Ionicons name="close-circle" size={16} color="#6d16a2" />
-                                        </TouchableOpacity> */}
+                                        </TouchableOpacity>
                                     </View>
                                 ))}
                             </View>
@@ -177,7 +263,7 @@ const DeviceDetails = () => {
                 </View>
 
                 {/* Remove Device */}
-                <TouchableOpacity style={styles.removeButton}>
+                <TouchableOpacity style={styles.removeButton} onPress={handleRemoveDevice}>
                     <Ionicons name="trash-outline" size={18} color="#fff" />
                     <Text style={styles.removeButtonText}>Remove Device</Text>
                 </TouchableOpacity>
@@ -205,26 +291,77 @@ const DeviceDetails = () => {
             <Modal transparent animationType="slide" visible={keywordModal} onRequestClose={() => setKeywordModal(false)}>
                 <View style={styles.modalOverlay}>
                     <View style={styles.modalBox}>
-                        <Text style={styles.modalTitle}>Add Keyword</Text>
-                        <Text style={{ fontSize: 13, color: '#888', marginBottom: 12 }}>
-                            Parents will be notified when child searches this word in browser.
-                        </Text>
-                        <TextInput
-                            style={styles.modalInput}
-                            value={keywordInput}
-                            onChangeText={setKeywordInput}
-                            placeholder="e.g. drugs, violence"
-                            placeholderTextColor="#aaa"
-                            autoCapitalize="none"
-                        />
-                        <View style={styles.modalButtons}>
-                            <TouchableOpacity style={styles.cancelBtn} onPress={() => setKeywordModal(false)}>
-                                <Text style={styles.cancelText}>Cancel</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity style={styles.saveBtn} onPress={async () => { await addKeyword(); setKeywordModal(false); }} disabled={keywordSaving}>
-                                {keywordSaving ? <ActivityIndicator color="#fff" size="small" /> : <Text style={styles.saveText}>Add</Text>}
+                        <Text style={styles.modalTitle}>Manage Keywords</Text>
+                        <Text style={{ fontSize: 13, color: '#888', marginBottom: 12 }}>Parents will be notified when child searches these words.</Text>
+                        <View style={{ flexDirection: 'row', gap: 8, marginBottom: 16 }}>
+                            <TextInput
+                                style={[styles.modalInput, { flex: 1, marginBottom: 0 }]}
+                                value={keywordInput}
+                                onChangeText={setKeywordInput}
+                                placeholder="e.g. drugs, violence"
+                                placeholderTextColor="#aaa"
+                                autoCapitalize="none"
+                            />
+                            <TouchableOpacity
+                                style={[styles.saveBtn, { justifyContent: 'center' }]}
+                                onPress={addKeyword}
+                                disabled={keywordSaving}
+                            >
+                                {keywordSaving ? <ActivityIndicator color="#fff" size="small" /> : <Ionicons name="add" size={22} color="#fff" />}
                             </TouchableOpacity>
                         </View>
+                        <View style={styles.keywordList}>
+                            {keywords.map((kw, i) => (
+                                <View key={i} style={styles.keywordChip}>
+                                    <Text style={styles.keywordText}>{kw}</Text>
+                                    <TouchableOpacity onPress={() => removeKeyword(kw)} >
+                                        <Ionicons name="close-circle" size={16} color="#6d16a2" />
+                                    </TouchableOpacity>
+                                </View>
+                            ))}
+                        </View>
+                        <TouchableOpacity style={[styles.saveBtn, { marginTop: 16 }]} onPress={() => setKeywordModal(false)}>
+                            <Text style={styles.saveText}>Done</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            </Modal>
+            {/* Website Modal */}
+            <Modal transparent animationType="slide" visible={websiteModal} onRequestClose={() => setWebsiteModal(false)}>
+                <View style={styles.modalOverlay}>
+                    <View style={styles.modalBox}>
+                        <Text style={styles.modalTitle}>Manage Blocked Websites</Text>
+                        <Text style={{ fontSize: 13, color: '#888', marginBottom: 12 }}>Add websites to block on child's device.</Text>
+                        <View style={{ flexDirection: 'row', gap: 8, marginBottom: 16 }}>
+                            <TextInput
+                                style={[styles.modalInput, { flex: 1, marginBottom: 0 }]}
+                                value={websiteInput}
+                                onChangeText={setWebsiteInput}
+                                placeholder="e.g. badsite.com"
+                                placeholderTextColor="#aaa"
+                                autoCapitalize="none"
+                            />
+                            <TouchableOpacity
+                                style={[styles.saveBtn, { justifyContent: 'center' }]}
+                                onPress={addWebsite}
+                                disabled={websiteSaving}
+                            >
+                                {websiteSaving ? <ActivityIndicator color="#fff" size="small" /> : <Ionicons name="add" size={22} color="#fff" />}
+                            </TouchableOpacity>
+                        </View>
+                        <View style={styles.keywordList}>
+                            {blockedWebsites.map((site, i) => (
+                                <View key={i} style={[styles.keywordChip, { backgroundColor: '#fff0f0' }]}>
+                                    <Text style={[styles.keywordText, { color: '#e53935' }]}>{site}</Text>
+                                    <TouchableOpacity onPress={() => removeWebsite(site)}>
+                                        <Ionicons name="close-circle" size={16} color="#e53935" />
+                                    </TouchableOpacity>
+                                </View>
+                            ))}
+                        </View>
+                        <TouchableOpacity style={[styles.saveBtn, { marginTop: 16 }]} onPress={() => setWebsiteModal(false)}>
+                            <Text style={styles.saveText}>Done</Text>
+                        </TouchableOpacity>
                     </View>
                 </View>
             </Modal>
