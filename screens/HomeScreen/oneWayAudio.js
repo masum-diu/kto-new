@@ -4,7 +4,7 @@ import { View, Text, Image, TouchableOpacity, StyleSheet, Dimensions } from "rea
 
 const { width } = Dimensions.get("window"); // screen width dynamically নিচ্ছি
 
-export default function oneWayAudio() {
+export default function OneWayAudio() {
      const navigation = useNavigation();
   return (
     <View style={styles.container}>

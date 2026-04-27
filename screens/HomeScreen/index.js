@@ -13,15 +13,25 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import instance from "../../api/api_instance";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import Ionicons from "react-native-vector-icons/Ionicons";
+import { PUSHER_CONFIG } from "../../config/pusher";
 
 
 
 const HomeScreen = () => {
   const navigation = useNavigation();
+  const getRootNavigation = () => {
+    let current = navigation;
+    while (current?.getParent?.()) {
+      current = current.getParent();
+    }
+    return current || navigation;
+  };
   const [visible, setVisible] = useState(false);
   const [selectedChild, setSelectedChild] = useState(null);
+  
   const [selectedChildid, setSelectedChildid] = useState(null);
   const [user, setUser] = useState(null);
+  console.log(selectedChild, 'user')
   const [activities, setActivities] = useState([]);
   const [reportLoading, setReportLoading] = useState(false);
   const [appBlockModal, setAppBlockModal] = useState(false);
@@ -348,10 +358,23 @@ const HomeScreen = () => {
                     <Text style={styles.iconText}>Location tracking</Text>
                   </View>
                 </TouchableOpacity>
-                <TouchableOpacity onPress={() => navigation.navigate("OneWayAudio")}>
+                <TouchableOpacity
+                  onPress={() => {
+                    if (!selectedChild) {
+                      alert("Select a device first");
+                      return;
+                    }
+                    const rootNavigation = getRootNavigation();
+                    rootNavigation.navigate("LiveScreen", {
+                      selectedChild,
+                      familyId: user?.familyId,
+                      pusherConfig: PUSHER_CONFIG,
+                    });
+                  }}
+                >
                   <View style={styles.iconBox}>
-                    <Ionicons name="mic-outline" size={28} color="#6a1b9a" />
-                    <Text style={styles.iconText}>One-Way Audio</Text>
+                    <Ionicons name="desktop-outline" size={28} color="#6a1b9a" />
+                    <Text style={styles.iconText}>Start Live Screen</Text>
                   </View>
                 </TouchableOpacity>
               </View>

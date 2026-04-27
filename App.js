@@ -18,6 +18,7 @@ import BottomNavigation from "./navigation/BottomNavigation";
 import RemoteCamera from "./screens/HomeScreen/RemoteCamera";
 import ScreenMirroring from "./screens/HomeScreen/ScreenMirroring";
 import OneWayAudio from "./screens/HomeScreen/oneWayAudio";
+import LiveScreen from "./screens/HomeScreen/LiveScreen";
 import Notifications from "./screens/notificationScreen/index";
 import Settingscreen from "./screens/settingscreen/index";
 import Chat from "./screens/settingscreen/chat";
@@ -40,6 +41,7 @@ function Navigator() {
             <Stack.Screen name="RemoteCameraView" component={RemoteCamera} />
             <Stack.Screen name="ScreenMirroring" component={ScreenMirroring} />
             <Stack.Screen name="OneWayAudio" component={OneWayAudio} />
+            <Stack.Screen name="LiveScreen" component={LiveScreen} />
             <Stack.Screen name="NotificationScreen" component={Notifications} />
             <Stack.Screen name="settingscreen" component={Settingscreen} />
             <Stack.Screen name="chatScreen" component={Chat} />
