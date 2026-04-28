@@ -28,7 +28,7 @@ const HomeScreen = () => {
   };
   const [visible, setVisible] = useState(false);
   const [selectedChild, setSelectedChild] = useState(null);
-  
+
   const [selectedChildid, setSelectedChildid] = useState(null);
   const [user, setUser] = useState(null);
   console.log(selectedChild, 'user')

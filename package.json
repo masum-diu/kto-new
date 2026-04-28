@@ -4,9 +4,11 @@
   "private": true,
   "scripts": {
     "android": "react-native run-android",
+    "android:8082": "react-native run-android --port 8082",
     "ios": "react-native run-ios",
     "lint": "eslint .",
     "start": "react-native start",
+    "start:8082": "react-native start --port 8082",
     "test": "jest"
   },
   "dependencies": {
