@@ -98,6 +98,13 @@ const SettingsScreen = () => {
                         </View>
                         <Ionicons name="chevron-forward" size={18} color="#ccc" />
                     </TouchableOpacity>
+                    <TouchableOpacity style={styles.optionCard} onPress={() => navigation.navigate("Membership")}>
+                        <View style={styles.optionLeft}>
+                            <Ionicons name="card-outline" size={22} color="#6d16a2" />
+                            <Text style={styles.optionText}>Membership</Text>
+                        </View>
+                        <Ionicons name="chevron-forward" size={18} color="#ccc" />
+                    </TouchableOpacity>
                     {/* <TouchableOpacity style={styles.optionCard} onPress={() => navigation.navigate("chatScreen")}>
                         <View style={styles.optionLeft}>
                             <Ionicons name="chatbubble-outline" size={22} color="#6d16a2" />

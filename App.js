@@ -27,6 +27,7 @@ import UsageReport from "./screens/settingscreen/usagesReport";
 import Appblocking from "./screens/settingscreen/appblocking";
 import ConnectedDevice from "./screens/settingscreen/connectedDevice";
 import DeviceDetails from "./screens/settingscreen/deviceDetails";
+import UpgradeMembership from "./screens/MembershipScreen/UpgradeMembership";
 
 const Stack = createNativeStackNavigator();
 
@@ -100,6 +101,7 @@ function Navigator() {
             <Stack.Screen name="DeviceDetails" component={DeviceDetails} />
             <Stack.Screen name="MyProfile" component={MyProfile} />
             <Stack.Screen name="CircleCode" component={CircleCode} />
+            <Stack.Screen name="UpgradeMembership" component={UpgradeMembership} />
           </>
         ) : (
           <>
