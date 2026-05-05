@@ -1,3 +1,4 @@
+import React, { useEffect, useRef } from "react";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { NavigationContainer } from "@react-navigation/native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
@@ -31,9 +32,57 @@ const Stack = createNativeStackNavigator();
 
 function Navigator() {
   const { accessToken, loading } = useAuth();
+  const navigationRef = useRef(null);
+  const pendingTargetScreenRef = useRef(null);
+
+  const navigateFromNotification = (targetScreen) => {
+    if (!targetScreen) return;
+    if (!navigationRef.current) {
+      pendingTargetScreenRef.current = targetScreen;
+      return;
+    }
+    navigationRef.current.navigate(targetScreen);
+  };
+
+  useEffect(() => {
+    let unsubscribe;
+
+    try {
+      const notifeeModule = require("@notifee/react-native");
+      const notifee = notifeeModule?.default;
+      const EventType = notifeeModule?.EventType;
+
+      if (!notifee || !EventType || !accessToken) return;
+
+      unsubscribe = notifee.onForegroundEvent(({ type, detail }) => {
+        if (type !== EventType.PRESS) return;
+        navigateFromNotification(detail?.notification?.data?.targetScreen);
+      });
+
+      notifee.getInitialNotification().then((initialNotification) => {
+        const targetScreen = initialNotification?.notification?.data?.targetScreen;
+        navigateFromNotification(targetScreen);
+      });
+    } catch (error) {
+      console.log("Notifee root handler init error:", error);
+    }
+
+    return () => {
+      if (unsubscribe) unsubscribe();
+    };
+  }, [accessToken]);
+
   if (loading) return null;
   return (
-    <NavigationContainer>
+    <NavigationContainer
+      ref={navigationRef}
+      onReady={() => {
+        if (pendingTargetScreenRef.current) {
+          navigationRef.current?.navigate(pendingTargetScreenRef.current);
+          pendingTargetScreenRef.current = null;
+        }
+      }}
+    >
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         {accessToken ? (
           <>

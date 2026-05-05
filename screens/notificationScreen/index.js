@@ -1,21 +1,133 @@
-import { useNavigation } from "@react-navigation/native";
-import React from "react";
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image } from "react-native";
+import { useFocusEffect, useNavigation } from "@react-navigation/native";
+import React, { useCallback, useEffect, useRef, useState } from "react";
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image, Platform, PermissionsAndroid, ActivityIndicator } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Ionicons from "react-native-vector-icons/Ionicons";
-
-const notices = [
-  { label: "App Notifications", icon: "notifications-outline" },
-  { label: "Alerts Request", icon: "alert-circle-outline" },
-  { label: "Browser History", icon: "globe-outline" },
-  { label: "TikTok @ YouTube History", icon: "play-circle-outline" },
-  { label: "Snapshot", icon: "camera-outline" },
-  { label: "Usage Logs", icon: "bar-chart-outline" },
-  { label: "Social App Keyword Detection", icon: "search-outline" },
-];
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import instance from "../../api/api_instance";
 
 export default function Notifications() {
   const navigation = useNavigation();
+  const [notificationLogs, setNotificationLogs] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [highlightedLogId, setHighlightedLogId] = useState(null);
+  const lastTopLogIdRef = useRef(null);
+
+  const requestNotificationPermission = async () => {
+    if (Platform.OS !== "android") return;
+    if (Platform.Version < 33) return;
+
+    try {
+      await PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS);
+    } catch (error) {
+      console.log("Notification permission error:", error);
+    }
+  };
+
+  const showStatusBarNotification = async (logItem) => {
+    try {
+      const notifeeModule = require("@notifee/react-native");
+      const notifee = notifeeModule?.default;
+      const AndroidImportance = notifeeModule?.AndroidImportance;
+
+      if (!notifee || !AndroidImportance) {
+        console.log("Notifee native module not ready.");
+        return;
+      }
+
+      const channelId = await notifee.createChannel({
+        id: "kto-notification-logs",
+        name: "Notification Logs",
+        importance: AndroidImportance.HIGH,
+      });
+
+      await notifee.displayNotification({
+        title: logItem?.title || "Notification",
+        body: logItem?.message || "No message available",
+        data: {
+          targetScreen: "NotificationScreen",
+        },
+        android: {
+          channelId,
+          smallIcon: "ic_launcher",
+          pressAction: {
+            id: "open-notification-screen",
+          },
+        },
+      });
+    } catch (error) {
+      console.log("Show notification error:", error);
+    }
+  };
+
+  const notifyIfNewLog = async (logs) => {
+    if (!Array.isArray(logs) || logs.length === 0) return;
+
+    const latestLog = logs[0];
+    const latestLogId = String(latestLog?.id || "");
+    if (!latestLogId) return;
+
+    const notifiedLogId = await AsyncStorage.getItem("lastNotifiedLogId");
+    if (notifiedLogId === latestLogId) return;
+
+    await showStatusBarNotification(latestLog);
+    await AsyncStorage.setItem("lastNotifiedLogId", latestLogId);
+  };
+
+  const getNotificationLogs = async ({ silent = false } = {}) => {
+    if (!silent) {
+      setIsLoading(true);
+    }
+
+    try {
+      const token = await AsyncStorage.getItem("accessToken");
+      const response = await instance.get("/notifications/logs?page=1&limit=10", {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+
+      const logs = response?.data?.data?.logs || response?.data?.data || [];
+      const parsedLogs = Array.isArray(logs) ? logs : [];
+      const latestLogId = parsedLogs[0]?.id ?? null;
+
+      if (lastTopLogIdRef.current !== null && latestLogId && latestLogId !== lastTopLogIdRef.current) {
+        setHighlightedLogId(latestLogId);
+      }
+      lastTopLogIdRef.current = latestLogId;
+
+      setNotificationLogs(parsedLogs);
+      await notifyIfNewLog(parsedLogs);
+    } catch (error) {
+      console.log("Notification logs fetch error:", error);
+      setNotificationLogs([]);
+    } finally {
+      if (!silent) {
+        setIsLoading(false);
+      }
+    }
+  };
+
+  useEffect(() => {
+    requestNotificationPermission();
+    getNotificationLogs();
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      getNotificationLogs();
+
+      const intervalId = setInterval(() => {
+        getNotificationLogs({ silent: true });
+      }, 5000);
+
+      return () => {
+        clearInterval(intervalId);
+      };
+    }, [])
+  );
+
+  const getMessageFromLog = (logItem) => logItem?.message || "No message available";
+  const getTitleFromLog = (logItem) => logItem?.title || "Notification";
+
   return (
     <SafeAreaView style={styles.container}>
       {/* Header */}
@@ -33,18 +145,38 @@ export default function Notifications() {
 
       {/* List */}
       <ScrollView contentContainerStyle={styles.listContainer}>
-        {notices.map((item, index) => (
-          <TouchableOpacity key={index} style={styles.card}>
-            <View style={styles.iconWrapper}>
-              <Ionicons name={item.icon} size={24} color="#fff" />
-            </View>
-            <View style={styles.textWrapper}>
-              <Text style={styles.title}>{item.label}</Text>
-              <Text style={styles.subtitle}>No data available</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color="#ccc" />
-          </TouchableOpacity>
-        ))}
+        {isLoading ? (
+          <View style={styles.loaderContainer}>
+            <ActivityIndicator size="small" color="#8C52FF" />
+            <Text style={styles.loaderText}>Loading notifications...</Text>
+          </View>
+        ) : notificationLogs.length > 0 ? (
+          notificationLogs.map((logItem, index) => {
+            const isHighlighted = logItem?.id === highlightedLogId;
+            return (
+              <TouchableOpacity
+                key={logItem?.id || index}
+                style={[styles.card, isHighlighted && styles.highlightCard]}
+                onPress={() => showStatusBarNotification(logItem)}
+              >
+                <View style={styles.iconWrapper}>
+                  <Ionicons name="notifications-outline" size={24} color="#fff" />
+                </View>
+                <View style={styles.textWrapper}>
+                  <Text style={[styles.title, isHighlighted && styles.highlightTitle]}>
+                    {getTitleFromLog(logItem)}
+                  </Text>
+                  <Text style={[styles.subtitle, isHighlighted && styles.highlightSubtitle]}>
+                    {getMessageFromLog(logItem)}
+                  </Text>
+                </View>
+                <Ionicons name="chevron-forward" size={20} color="#ccc" />
+              </TouchableOpacity>
+            );
+          })
+        ) : (
+          <Text style={styles.emptyText}>No notification logs available.</Text>
+        )}
       </ScrollView>
     </SafeAreaView>
   );
@@ -91,6 +223,11 @@ const styles = StyleSheet.create({
     shadowRadius: 10,
     elevation: 3,
   },
+  highlightCard: {
+    backgroundColor: "#F5EDFF",
+    borderWidth: 1,
+    borderColor: "#8C52FF",
+  },
   iconWrapper: {
     width: 50,
     height: 50,
@@ -112,5 +249,28 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: "#999",
     marginTop: 2,
+  },
+  highlightTitle: {
+    color: "#6a1b9a",
+    fontWeight: "700",
+  },
+  highlightSubtitle: {
+    color: "#5e35b1",
+  },
+  emptyText: {
+    textAlign: "center",
+    color: "#666",
+    marginTop: 30,
+    fontSize: 14,
+  },
+  loaderContainer: {
+    marginTop: 30,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  loaderText: {
+    marginTop: 8,
+    color: "#666",
+    fontSize: 14,
   },
 });
