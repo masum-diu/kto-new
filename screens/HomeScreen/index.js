@@ -14,6 +14,9 @@ import instance from "../../api/api_instance";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import { PUSHER_CONFIG } from "../../config/pusher";
+import ProminentDisclosureModal from "../../components/ProminentDisclosureModal";
+import { DISCLOSURE } from "../../constants/disclosureContent";
+import { CONSENT_KEYS, grantConsent, hasConsent } from "../../utils/disclosureConsent";
 
 
 
@@ -42,6 +45,8 @@ const HomeScreen = () => {
   const [screenTimeLimit, setScreenTimeLimit] = useState(null);
   const [appLimits, setAppLimits] = useState({});
   const [policyLoading, setPolicyLoading] = useState(false);
+  const [remoteDisclosureVisible, setRemoteDisclosureVisible] = useState(false);
+  const [pendingRemoteAction, setPendingRemoteAction] = useState(null);
   // console.log(blockedPackages)
   const saveScreenTimeLimit = async () => {
     try {
@@ -125,24 +130,34 @@ const HomeScreen = () => {
     }, [])
   );
 
-  const requestScreenCapturePermission = async () => {
-    const token = await AsyncStorage.getItem("accessToken");
-    console.log(selectedChild);
-
-    try {
-
-      if (!selectedChild) {
-        alert("Please select a child device first.");
-        return;
-      }
-      else { navigation.navigate("ScreenMirroring", { selectedChild }) }
-      navigation.navigate("ScreenMirroring", { selectedChild })
-    } catch (error) {
-      console.error(
-        "Error requesting screen capture permission:",
-        error?.response?.data || error.message
-      );
+  const runWithRemoteConsent = async (action) => {
+    const accepted = await hasConsent(CONSENT_KEYS.REMOTE_MONITORING);
+    if (accepted) {
+      action();
+      return;
     }
+    setPendingRemoteAction(() => action);
+    setRemoteDisclosureVisible(true);
+  };
+
+  const handleRemoteConsentAgree = async () => {
+    await grantConsent(CONSENT_KEYS.REMOTE_MONITORING);
+    setRemoteDisclosureVisible(false);
+    if (pendingRemoteAction) {
+      pendingRemoteAction();
+    }
+    setPendingRemoteAction(null);
+  };
+
+  const requestScreenCapturePermission = async () => {
+    if (!selectedChild) {
+      alert("Please select a child device first.");
+      return;
+    }
+
+    runWithRemoteConsent(() => {
+      navigation.navigate("ScreenMirroring", { selectedChild });
+    });
   };
 
   return (
@@ -364,11 +379,13 @@ const HomeScreen = () => {
                       alert("Select a device first");
                       return;
                     }
-                    const rootNavigation = getRootNavigation();
-                    rootNavigation.navigate("LiveScreen", {
-                      selectedChild,
-                      familyId: user?.familyId,
-                      pusherConfig: PUSHER_CONFIG,
+                    runWithRemoteConsent(() => {
+                      const rootNavigation = getRootNavigation();
+                      rootNavigation.navigate("LiveScreen", {
+                        selectedChild,
+                        familyId: user?.familyId,
+                        pusherConfig: PUSHER_CONFIG,
+                      });
                     });
                   }}
                 >
@@ -475,6 +492,16 @@ const HomeScreen = () => {
           </View>
         </View>
       </Modal>
+
+      <ProminentDisclosureModal
+        visible={remoteDisclosureVisible}
+        {...DISCLOSURE.REMOTE_MONITORING}
+        onAgree={handleRemoteConsentAgree}
+        onDecline={() => {
+          setRemoteDisclosureVisible(false);
+          setPendingRemoteAction(null);
+        }}
+      />
 
     </SafeAreaView>
   );

@@ -1,37 +1,73 @@
-import { View, Text, Image, Dimensions, TouchableOpacity, StyleSheet } from 'react-native';
-import React from 'react';
+import { View, Text, Image, Dimensions, TouchableOpacity, StyleSheet, ScrollView, Linking } from 'react-native';
+import React, { useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
+import ProminentDisclosureModal from '../../components/ProminentDisclosureModal';
+import { DISCLOSURE, PRIVACY_POLICY_URL } from '../../constants/disclosureContent';
+import { CONSENT_KEYS, grantConsent } from '../../utils/disclosureConsent';
 
 const Monitor = () => {
     const { width, height } = Dimensions.get("window");
     const navigation = useNavigation();
+    const [showDisclosure, setShowDisclosure] = useState(true);
+
+    const handleAgree = async () => {
+        await grantConsent(CONSENT_KEYS.CHILD_DEVICE);
+        setShowDisclosure(false);
+        navigation.navigate("CircleCode");
+    };
 
     return (
         <SafeAreaView style={styles.container}>
-            <View style={styles.imageWrapper}>
-                <Image
-                    source={require("../../assets/sdf.png")}
-                    style={{ width: width * 0.9, height: height * 0.3 }}
-                    resizeMode="contain"
-                />
-            </View>
+            <ScrollView contentContainerStyle={styles.scrollContent}>
+                <View style={styles.imageWrapper}>
+                    <Image
+                        source={require("../../assets/sdf.png")}
+                        style={{ width: width * 0.9, height: height * 0.3 }}
+                        resizeMode="contain"
+                    />
+                </View>
 
-            <Text style={styles.title}>Monitor the child's gadget</Text>
+                <Text style={styles.title}>Child device monitoring consent</Text>
 
-            <Text style={styles.description}>
-                Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum.
-            </Text>
+                <Text style={styles.description}>
+                    This device may be monitored by a parent or legal guardian using KTO for family safety.
+                    Location, app usage, device activity, and remote safety features may be shared with the
+                    linked parent account on secure KTO servers.
+                </Text>
 
-            <View style={styles.buttonRow}>
-                <TouchableOpacity style={[styles.button, styles.notNowBtn]}>
-                    <Text style={[styles.buttonText, styles.notNowText]}>Not now</Text>
+                <Text style={styles.description}>
+                    Monitoring must only be used on devices you own or are legally authorized to monitor,
+                    and with proper consent from the device user or guardian where required by law.
+                </Text>
+
+                <TouchableOpacity onPress={() => Linking.openURL(PRIVACY_POLICY_URL)}>
+                    <Text style={styles.policyLink}>Read Privacy Policy</Text>
                 </TouchableOpacity>
 
-                <TouchableOpacity style={[styles.button, styles.agreeBtn]} onPress={() => navigation.navigate("MainHome")}>
-                    <Text style={[styles.buttonText, styles.agreeText]}>Agree</Text>
-                </TouchableOpacity>
-            </View>
+                <View style={styles.buttonRow}>
+                    <TouchableOpacity
+                        style={[styles.button, styles.notNowBtn]}
+                        onPress={() => navigation.goBack()}
+                    >
+                        <Text style={[styles.buttonText, styles.notNowText]}>Not now</Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                        style={[styles.button, styles.agreeBtn]}
+                        onPress={() => setShowDisclosure(true)}
+                    >
+                        <Text style={[styles.buttonText, styles.agreeText]}>Review & Agree</Text>
+                    </TouchableOpacity>
+                </View>
+            </ScrollView>
+
+            <ProminentDisclosureModal
+                visible={showDisclosure}
+                {...DISCLOSURE.CHILD_DEVICE}
+                onAgree={handleAgree}
+                onDecline={() => setShowDisclosure(false)}
+            />
         </SafeAreaView>
     );
 };
@@ -42,7 +78,10 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: "#fff",
+    },
+    scrollContent: {
         padding: 16,
+        paddingBottom: 32,
     },
     imageWrapper: {
         alignItems: "center",
@@ -50,7 +89,7 @@ const styles = StyleSheet.create({
     },
     title: {
         fontSize: 20,
-        fontWeight: "600",
+        fontWeight: "700",
         textAlign: "center",
         marginTop: 8,
         color: "#333",
@@ -58,9 +97,16 @@ const styles = StyleSheet.create({
     description: {
         fontSize: 14,
         fontWeight: "400",
-        color: "#7f7f7f",
-        marginVertical: 20,
-        lineHeight: 20,
+        color: "#4b5563",
+        marginVertical: 12,
+        lineHeight: 22,
+    },
+    policyLink: {
+        color: "#6b21a8",
+        fontWeight: "700",
+        fontSize: 14,
+        textDecorationLine: "underline",
+        marginBottom: 16,
     },
     buttonRow: {
         flexDirection: "row",

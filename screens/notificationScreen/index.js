@@ -5,18 +5,38 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import instance from "../../api/api_instance";
+import ProminentDisclosureModal from "../../components/ProminentDisclosureModal";
+import { DISCLOSURE } from "../../constants/disclosureContent";
+import { CONSENT_KEYS, grantConsent, hasConsent } from "../../utils/disclosureConsent";
 
 export default function Notifications() {
   const navigation = useNavigation();
   const [notificationLogs, setNotificationLogs] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [highlightedLogId, setHighlightedLogId] = useState(null);
+  const [showDisclosure, setShowDisclosure] = useState(false);
   const lastTopLogIdRef = useRef(null);
 
   const requestNotificationPermission = async () => {
     if (Platform.OS !== "android") return;
     if (Platform.Version < 33) return;
 
+    const accepted = await hasConsent(CONSENT_KEYS.NOTIFICATIONS);
+    if (!accepted) {
+      setShowDisclosure(true);
+      return;
+    }
+
+    try {
+      await PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS);
+    } catch (error) {
+      console.log("Notification permission error:", error);
+    }
+  };
+
+  const handleNotificationConsentAgree = async () => {
+    await grantConsent(CONSENT_KEYS.NOTIFICATIONS);
+    setShowDisclosure(false);
     try {
       await PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS);
     } catch (error) {
@@ -178,6 +198,13 @@ export default function Notifications() {
           <Text style={styles.emptyText}>No notification logs available.</Text>
         )}
       </ScrollView>
+
+      <ProminentDisclosureModal
+        visible={showDisclosure}
+        {...DISCLOSURE.NOTIFICATIONS}
+        onAgree={handleNotificationConsentAgree}
+        onDecline={() => setShowDisclosure(false)}
+      />
     </SafeAreaView>
   );
 }

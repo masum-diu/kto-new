@@ -15,6 +15,9 @@ import Geolocation from "@react-native-community/geolocation";
 import MapView, { Marker, PROVIDER_GOOGLE, Polyline } from "react-native-maps";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import instance from "../../api/api_instance";
+import ProminentDisclosureModal from "../../components/ProminentDisclosureModal";
+import { DISCLOSURE } from "../../constants/disclosureContent";
+import { CONSENT_KEYS, grantConsent, hasConsent } from "../../utils/disclosureConsent";
 
 // Distance calculation
 const getDistance = (lat1, lon1, lat2, lon2) => {
@@ -43,6 +46,9 @@ const LocationScreen = () => {
   const [user, setUser] = useState(null);
   const [selectedChild, setSelectedChild] = useState(null);
   const [childLocation, setChildLocation] = useState(null);
+  const [consentChecked, setConsentChecked] = useState(false);
+  const [showDisclosure, setShowDisclosure] = useState(false);
+  const [locationConsentGranted, setLocationConsentGranted] = useState(false);
 
   // Fetch user and device list
   const getuserData = async () => {
@@ -133,8 +139,29 @@ const LocationScreen = () => {
   };
 
   useEffect(() => {
-    requestLocationPermission();
+    const initConsent = async () => {
+      const accepted = await hasConsent(CONSENT_KEYS.LOCATION);
+      setLocationConsentGranted(accepted);
+      setShowDisclosure(!accepted);
+      setConsentChecked(true);
+      if (accepted) {
+        requestLocationPermission();
+      }
+    };
+    initConsent();
   }, []);
+
+  const handleLocationConsentAgree = async () => {
+    await grantConsent(CONSENT_KEYS.LOCATION);
+    setLocationConsentGranted(true);
+    setShowDisclosure(false);
+    requestLocationPermission();
+  };
+
+  const handleLocationConsentDecline = () => {
+    setShowDisclosure(false);
+    setErrorMsg('Location permission was not granted. You can enable it later from this screen.');
+  };
 
   // Device selection handler
   const handleSelectChild = (trackId) => {
@@ -152,6 +179,31 @@ const LocationScreen = () => {
     }, 5000);
     return () => clearInterval(interval);
   }, [selectedChild]);
+
+  if (!consentChecked) {
+    return (
+      <View style={styles.loader}>
+        <ActivityIndicator size="large" color="#6a1b9a" />
+      </View>
+    );
+  }
+
+  if (!locationConsentGranted && !location && !errorMsg) {
+    return (
+      <View style={styles.loader}>
+        <Text style={styles.consentHint}>Location disclosure is required to use this feature.</Text>
+        <TouchableOpacity style={styles.consentBtn} onPress={() => setShowDisclosure(true)}>
+          <Text style={styles.consentBtnText}>Review Disclosure</Text>
+        </TouchableOpacity>
+        <ProminentDisclosureModal
+          visible={showDisclosure}
+          {...DISCLOSURE.LOCATION}
+          onAgree={handleLocationConsentAgree}
+          onDecline={handleLocationConsentDecline}
+        />
+      </View>
+    );
+  }
 
   if (!location && !errorMsg) {
     return (
@@ -255,7 +307,24 @@ const LocationScreen = () => {
 
 const styles = StyleSheet.create({
   map: { flex: 1 },
-  loader: { flex: 1, justifyContent: "center", alignItems: "center" },
+  loader: { flex: 1, justifyContent: "center", alignItems: "center", padding: 20 },
+  consentHint: {
+    fontSize: 14,
+    color: '#6b7280',
+    textAlign: 'center',
+    marginBottom: 12,
+    lineHeight: 20,
+  },
+  consentBtn: {
+    backgroundColor: '#6b21a8',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 10,
+  },
+  consentBtnText: {
+    color: '#fff',
+    fontWeight: '700',
+  },
   topPanel: {
     position: "absolute",
     top: 50,

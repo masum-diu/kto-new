@@ -15,7 +15,7 @@ import Monitor from "./screens/Monitor";
 import MyProfile from "./screens/settingscreen/MyProfile";
 import Sucessmessage from "./screens/CreateAccount/sucessmessage";
 
-import BottomNavigation from "./navigation/BottomNavigation";
+import MainHomeGate from "./screens/MainHomeGate";
 import RemoteCamera from "./screens/HomeScreen/RemoteCamera";
 import ScreenMirroring from "./screens/HomeScreen/ScreenMirroring";
 import OneWayAudio from "./screens/HomeScreen/oneWayAudio";
@@ -87,7 +87,7 @@ function Navigator() {
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         {accessToken ? (
           <>
-            <Stack.Screen name="MainHome" component={BottomNavigation} />
+            <Stack.Screen name="MainHome" component={MainHomeGate} />
             <Stack.Screen name="RemoteCameraView" component={RemoteCamera} />
             <Stack.Screen name="ScreenMirroring" component={ScreenMirroring} />
             <Stack.Screen name="OneWayAudio" component={OneWayAudio} />
