@@ -46,6 +46,7 @@ const LocationScreen = () => {
   const [user, setUser] = useState(null);
   const [selectedChild, setSelectedChild] = useState(null);
   const [childLocation, setChildLocation] = useState(null);
+  const [requestLoading, setRequestLoading] = useState(false);
   const [consentChecked, setConsentChecked] = useState(false);
   const [showDisclosure, setShowDisclosure] = useState(false);
   const [locationConsentGranted, setLocationConsentGranted] = useState(false);
@@ -66,14 +67,12 @@ const LocationScreen = () => {
   // Send location request command
   const LocationRequest = async (trackId) => {
     if (!trackId) return;
+    setRequestLoading(true);
     try {
       const token = await AsyncStorage.getItem("accessToken");
-      await instance.post(
+      const res = await instance.post(
         "/control/send-command",
-        {
-          trackId,
-          command: "REQUEST_LOCATION",
-        },
+        { trackId, command: "REQUEST_LOCATION" },
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -81,30 +80,33 @@ const LocationScreen = () => {
           },
         }
       );
+      console.log("LocationRequest response:", JSON.stringify(res.data));
       Alert.alert("Command Sent", "Location request sent.");
     } catch (error) {
-      console.log("Location request error:", error);
+      console.log("LocationRequest error:", JSON.stringify(error?.response?.data || error.message));
+      Alert.alert("Error", error?.response?.data?.message || error.message);
+    } finally {
+      setRequestLoading(false);
     }
   };
 
   // Fetch child location history
   const locatonlist = async (trackId) => {
     try {
-      const res = await instance.get(
-        `/locations/${trackId}/history?page=1&limit=10`
-      );
+      const res = await instance.get(`/locations/${trackId}/history?page=1&limit=10`);
+      console.log("locatonlist response:", JSON.stringify(res.data));
       const locationlist = res?.data?.data?.locations;
       if (locationlist && locationlist.length > 0) {
         const latestLocation = locationlist[0];
         setChildLocation({
-          latitude: latestLocation.latitude,
-          longitude: latestLocation.longitude,
+          latitude: Number(latestLocation.latitude),
+          longitude: Number(latestLocation.longitude),
         });
       } else {
         setChildLocation(null);
       }
     } catch (error) {
-      console.log(error);
+      console.log("locatonlist error:", JSON.stringify(error?.response?.data || error.message));
       setChildLocation(null);
     }
   };
@@ -128,13 +130,9 @@ const LocationScreen = () => {
 
   const getCurrentLocation = () => {
     Geolocation.getCurrentPosition(
-      (position) => {
-        setLocation(position.coords);
-      },
-      (error) => {
-        setErrorMsg(error.message);
-      },
-      { enableHighAccuracy: true, timeout: 15000 }
+      (position) => setLocation(position.coords),
+      (error) => setErrorMsg(error.message),
+      { enableHighAccuracy: false, timeout: 30000, maximumAge: 10000 }
     );
   };
 
@@ -205,11 +203,17 @@ const LocationScreen = () => {
     );
   }
 
-  if (!location && !errorMsg) {
+  if (!location) {
     return (
       <View style={styles.loader}>
-        <ActivityIndicator size="large" color="#6a1b9a" />
-        <Text>Fetching current location...</Text>
+        {errorMsg ? (
+          <Text style={{ color: 'red', textAlign: 'center' }}>{errorMsg}</Text>
+        ) : (
+          <>
+            <ActivityIndicator size="large" color="#6a1b9a" />
+            <Text>Fetching current location...</Text>
+          </>
+        )}
       </View>
     );
   }
@@ -294,8 +298,9 @@ const LocationScreen = () => {
         {selectedChild && (
           <View style={{ marginTop: 10 }}>
             <Button
-              title="Request Location"
+              title={requestLoading ? "Sending..." : "Request Location"}
               onPress={() => LocationRequest(selectedChild)}
+              disabled={requestLoading}
               color="#6a1b9a"
             />
           </View>
