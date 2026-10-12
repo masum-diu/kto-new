@@ -1,6 +1,7 @@
 import { View, Text, TextInput, TouchableOpacity, StyleSheet,} from 'react-native';
 import React, { useState } from 'react';
 import { useNavigation } from '@react-navigation/native';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 import instance from '../../api/api_instance';
 import { useAuth } from '../../context/AuthContext';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -9,6 +10,7 @@ const AuthScreen = () => {
   const [isSignIn, setIsSignIn] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const navigation = useNavigation();
   const { login } = useAuth();
   const handleSubmit = async () => {
@@ -71,13 +73,29 @@ const AuthScreen = () => {
       {/* Password */}
       <View style={styles.inputGroup}>
         <Text style={styles.label}>Password</Text>
-        <TextInput
-          placeholder="Enter your password"
-          value={password}
-          onChangeText={setPassword}
-          style={[styles.input, { color: '#a1a1a1', marginBottom: 24 }]}
-          secureTextEntry
-        />
+        <View style={styles.passwordWrapper}>
+          <TextInput
+            placeholder="Enter your password"
+            value={password}
+            onChangeText={setPassword}
+            style={[styles.input, styles.passwordInput, { color: '#a1a1a1' }]}
+            secureTextEntry={!showPassword}
+            autoCapitalize="none"
+            autoCorrect={false}
+            textContentType="none"
+            importantForAutofill="no"
+          />
+          <TouchableOpacity
+            style={styles.eyeIcon}
+            onPress={() => setShowPassword(!showPassword)}
+          >
+            <Ionicons
+              name={showPassword ? 'eye-off' : 'eye'}
+              size={22}
+              color="#7f7f7f"
+            />
+          </TouchableOpacity>
+        </View>
       </View>
 
       <TouchableOpacity>
@@ -139,6 +157,20 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     fontSize: 16,
+  },
+  passwordWrapper: {
+    justifyContent: "center",
+    marginBottom: 24,
+  },
+  passwordInput: {
+    marginBottom: 0,
+    paddingRight: 48,
+  },
+  eyeIcon: {
+    position: "absolute",
+    right: 16,
+    height: "100%",
+    justifyContent: "center",
   },
   forgotPassword: {
     textAlign: "right",

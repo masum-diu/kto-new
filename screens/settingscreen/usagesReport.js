@@ -1,6 +1,6 @@
 import { useNavigation, useRoute } from "@react-navigation/native";
 import React, { useState, useEffect } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, Switch, Alert } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import instance from "../../api/api_instance";
@@ -12,7 +12,38 @@ export default function UsageReport() {
   const trackId = route.params?.trackId;
   const [activities, setActivities] = useState([]);
   const [loading, setLoading] = useState(true);
-console.log(activities)
+  const [deviceTrackId, setDeviceTrackId] = useState(route.params?.deviceTrackId);
+  const [blockedApps, setBlockedApps] = useState([]);
+  const [dailyLimit, setDailyLimit] = useState(null);
+  const [saving, setSaving] = useState(false);
+
+  const toggleBlock = async (packageName) => {
+    const previous = blockedApps;
+    const updated = previous.includes(packageName)
+      ? previous.filter((p) => p !== packageName)
+      : [...previous, packageName];
+    setBlockedApps(updated);
+    try {
+      setSaving(true);
+      // Same endpoint/payload as Home's Screen Time modal and the App Blocking screen.
+      await instance.post('/policies', {
+        trackId: deviceTrackId,
+        dailyLimitMinutes: dailyLimit,
+        blockedApps: updated,
+      });
+      let local = {};
+      try {
+        local = JSON.parse(await AsyncStorage.getItem(`policy:${trackId}`)) || {};
+      } catch (e) {}
+      AsyncStorage.setItem(`policy:${trackId}`, JSON.stringify({ ...local, blockedApps: updated })).catch(() => {});
+    } catch (e) {
+      setBlockedApps(previous);
+      const body = e?.response?.data;
+      Alert.alert('Update failed', String(body?.message || e?.message || 'Could not update app blocking'));
+    } finally {
+      setSaving(false);
+    }
+  };
   useEffect(() => {
     const fetchUsage = async () => {
       try {
@@ -21,8 +52,16 @@ console.log(activities)
         const res = await instance.get(`/children/${trackId}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
-        console.log(res)
-        const raw = res?.data?.data?.activities || res?.data?.data || [];
+        const childData = res?.data?.data;
+        setDeviceTrackId((prev) => prev ?? childData?.trackId ?? childData?.track_id);
+        setDailyLimit(childData?.policy?.daily_limit_minutes ?? childData?.daily_limit_minutes ?? null);
+        let local = null;
+        try {
+          local = JSON.parse(await AsyncStorage.getItem(`policy:${trackId}`));
+        } catch (e) {}
+        setBlockedApps(local?.blockedApps ?? childData?.policy?.blocked_apps ?? []);
+        const found = childData?.activities || childData;
+        const raw = Array.isArray(found) ? found : [];
         const unique = Object.values(
           raw.reduce((acc, item) => {
             if (!acc[item.app_name]) {
@@ -81,6 +120,7 @@ console.log(activities)
           {/* Activity List */}
           <View style={styles.card}>
             <Text style={styles.cardTitle}>App Activities</Text>
+            <Text style={styles.hintText}>Turn the switch on to block an app</Text>
             {activities.length === 0 ? (
               <Text style={styles.emptyText}>No activity data available</Text>
             ) : (
@@ -99,6 +139,13 @@ console.log(activities)
                     </View>
                   </View>
                   <Text style={styles.appTime}>{formatDuration(item.duration_minutes)}</Text>
+                  <Switch
+                    value={blockedApps.includes(item.package_name)}
+                    onValueChange={() => toggleBlock(item.package_name)}
+                    disabled={saving || !deviceTrackId}
+                    thumbColor="#fff"
+                    trackColor={{ false: '#ccc', true: '#6d16a2' }}
+                  />
                 </View>
               ))
             )}
@@ -144,7 +191,8 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.08,
     shadowRadius: 8,
   },
-  cardTitle: { fontSize: 16, fontWeight: "700", color: "#333", marginBottom: 16 },
+  cardTitle: { fontSize: 16, fontWeight: "700", color: "#333", marginBottom: 4 },
+  hintText: { fontSize: 12, color: "#999", marginBottom: 16 },
   emptyText: { fontSize: 14, color: "#999", textAlign: "center", paddingVertical: 20 },
   activityRow: {
     flexDirection: "row",

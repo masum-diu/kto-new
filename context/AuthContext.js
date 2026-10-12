@@ -21,6 +21,7 @@ export const AuthProvider = ({ children }) => {
 
   const logout = async () => {
     await AsyncStorage.removeItem("accessToken");
+    await AsyncStorage.removeItem("cachedUser");
     setAccessToken(null);
   };
 

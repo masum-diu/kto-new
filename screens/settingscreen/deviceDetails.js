@@ -173,14 +173,14 @@ const DeviceDetails = () => {
                         </View>
                         <Ionicons name="chevron-forward" size={18} color="#ccc" />
                     </TouchableOpacity>
-                    <TouchableOpacity style={styles.optionCard} onPress={() => navigation.navigate("UsageReport", { trackId: device?.child?.trackId })}>
+                    <TouchableOpacity style={styles.optionCard} onPress={() => navigation.navigate("UsageReport", { trackId: device?.child?.id, deviceTrackId: device?.child?.trackId })}>
                         <View style={styles.optionLeft}>
                             <Ionicons name="bar-chart-outline" size={20} color="#6d16a2" />
                             <Text style={styles.optionText}>View Usage Report</Text>
                         </View>
                         <Ionicons name="chevron-forward" size={18} color="#ccc" />
                     </TouchableOpacity>
-                    <TouchableOpacity style={styles.optionCard} onPress={() => navigation.navigate("Appblocking", { trackId: device?.child?.trackId })}>
+                    <TouchableOpacity style={styles.optionCard} onPress={() => navigation.navigate("Appblocking", { trackId: device?.child?.id, deviceTrackId: device?.child?.trackId })}>
                         <View style={styles.optionLeft}>
                             <Ionicons name="ban-outline" size={20} color="#6d16a2" />
                             <Text style={styles.optionText}>Manage App Blocking</Text>

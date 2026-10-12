@@ -1,6 +1,6 @@
 import { useNavigation } from "@react-navigation/native";
 import { useFocusEffect } from "@react-navigation/native";
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useRef } from "react";
 import {
   View,
   Text,
@@ -20,6 +20,10 @@ import { CONSENT_KEYS, grantConsent, hasConsent } from "../../utils/disclosureCo
 
 
 
+const USER_CACHE_KEY = "cachedUser";
+const USER_STALE_MS = 30 * 1000;
+const POLICY_CACHE_PREFIX = "policy:";
+
 const HomeScreen = () => {
   const navigation = useNavigation();
   const getRootNavigation = () => {
@@ -34,7 +38,10 @@ const HomeScreen = () => {
 
   const [selectedChildid, setSelectedChildid] = useState(null);
   const [user, setUser] = useState(null);
-  console.log(selectedChild, 'user')
+  const [userLoading, setUserLoading] = useState(false);
+  const [childList, setChildList] = useState(null);
+  const [childrenLoading, setChildrenLoading] = useState(false);
+  const lastUserFetch = useRef(0);
   const [activities, setActivities] = useState([]);
   const [reportLoading, setReportLoading] = useState(false);
   const [appBlockModal, setAppBlockModal] = useState(false);
@@ -57,6 +64,11 @@ const HomeScreen = () => {
         dailyLimitMinutes: screenTimeLimit,
         blockedApps: blockedPackages,
       }, { headers: { Authorization: `Bearer ${token}` } });
+      // Local copy so the selection survives even if /children/:id doesn't echo the policy back.
+      AsyncStorage.setItem(
+        `${POLICY_CACHE_PREFIX}${selectedChildid}`,
+        JSON.stringify({ blockedApps: blockedPackages, dailyLimit: screenTimeLimit })
+      ).catch(() => {});
       setScreenTimeModal(false);
     } catch (e) { console.log(e); }
     finally { setPolicyLoading(false); }
@@ -97,7 +109,19 @@ const HomeScreen = () => {
       const res = await instance.get(`/children/${trackId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      const raw = res?.data?.data?.activities || res?.data?.data || [];
+      const childData = res?.data?.data;
+      // Restore the saved policy so the switches/limit reflect what was blocked earlier.
+      const savedPolicy = childData?.policy;
+      console.log('[children/:id] policy', savedPolicy, 'daily', childData?.daily_limit_minutes);
+      let local = null;
+      try {
+        local = JSON.parse(await AsyncStorage.getItem(`${POLICY_CACHE_PREFIX}${trackId}`));
+      } catch (e) {}
+      setBlockedPackages(savedPolicy?.blocked_apps ?? local?.blockedApps ?? []);
+      setScreenTimeLimit(
+        savedPolicy?.daily_limit_minutes ?? childData?.daily_limit_minutes ?? local?.dailyLimit ?? null
+      );
+      const raw = childData?.activities || childData || [];
       const unique = Object.values(
         raw.reduce((acc, item) => {
           if (!acc[item.app_name]) acc[item.app_name] = { ...item };
@@ -114,19 +138,39 @@ const HomeScreen = () => {
   };
 
   const getuserData = async () => {
-    const token = await AsyncStorage.getItem('accessToken');
-    const user = await instance.get('/users/me', {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
+    try {
+      setUserLoading(true);
+      const res = await instance.get('/users/me');
+      const data = res?.data?.data ?? res?.data;
+      if (!data || typeof data !== 'object') {
+        console.log('[users/me] unexpected response', res?.status, res?.data);
+        return;
       }
-    });
-    setUser(user.data.data);
-  }
+      setUser(data);
+      lastUserFetch.current = Date.now();
+      AsyncStorage.setItem(USER_CACHE_KEY, JSON.stringify(data)).catch(() => {});
+    } catch (e) {
+      console.log('[users/me] failed', e?.code, e?.response?.status, e?.response?.data || e?.message);
+    } finally {
+      setUserLoading(false);
+    }
+  };
 
+  // Show cached user instantly on mount, then refresh in the background.
+  useEffect(() => {
+    AsyncStorage.getItem(USER_CACHE_KEY)
+      .then((cached) => {
+        if (cached) setUser((prev) => prev || JSON.parse(cached));
+      })
+      .catch(() => {});
+  }, []);
+
+  // Refetch on focus only when the data is stale.
   useFocusEffect(
     useCallback(() => {
-      getuserData();
+      if (Date.now() - lastUserFetch.current > USER_STALE_MS) {
+        getuserData();
+      }
     }, [])
   );
 
@@ -148,6 +192,33 @@ const HomeScreen = () => {
     }
     setPendingRemoteAction(null);
   };
+
+  // Fresh child list from the same endpoint Connected Devices uses (items have the same { child } shape).
+  const fetchChildren = async (familyId) => {
+    if (!familyId) return;
+    try {
+      setChildrenLoading(true);
+      const res = await instance.get(`/children?familyId=${familyId}`);
+      const list = res?.data?.data;
+      if (Array.isArray(list)) setChildList(list);
+    } catch (e) {
+      console.log('[children list] failed', e?.code, e?.response?.status, e?.response?.data || e?.message);
+    } finally {
+      setChildrenLoading(false);
+    }
+  };
+
+  // Every time the device picker opens, refresh the list so newly linked children show up.
+  useEffect(() => {
+    if (!visible) return;
+    if (user?.familyId) {
+      fetchChildren(user.familyId);
+    } else if (!userLoading) {
+      getuserData();
+    }
+  }, [visible, user?.familyId]);
+
+  const children = childList ?? user?.children ?? [];
 
   const requestScreenCapturePermission = async () => {
     if (!selectedChild) {
@@ -189,6 +260,7 @@ const HomeScreen = () => {
                 </View>
                 <View>
                   <Text style={styles.name}>{user?.name || 'Welcome'}</Text>
+                  {userLoading && !user && <ActivityIndicator size="small" color="#fff" />}
                   <Text style={styles.familyLabel}>{user?.familyName} Family</Text>
                   <View style={styles.onlineRow}>
                     <Ionicons name="wifi" size={12} color="#4ade80" />
@@ -251,7 +323,7 @@ const HomeScreen = () => {
 
                 <TouchableOpacity style={styles.iconBox} onPress={() => {
                   if (!selectedChild) { alert('Select a device first'); return; }
-                  navigation.navigate("Appblocking", { trackId: selectedChildid })
+                  navigation.navigate("Appblocking", { trackId: selectedChildid, deviceTrackId: selectedChild })
                 }}>
                   <Ionicons name="shield-checkmark-outline" size={28} color="#6a1b9a" />
                   <Text style={styles.iconText}>App Rules</Text>
@@ -394,6 +466,26 @@ const HomeScreen = () => {
                     <Text style={styles.iconText}>Start Live Screen</Text>
                   </View>
                 </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => {
+                    if (!selectedChild) {
+                      alert("Select a device first");
+                      return;
+                    }
+                    runWithRemoteConsent(() => {
+                      getRootNavigation().navigate("OneWayAudio", {
+                        selectedChild,
+                        familyId: user?.familyId,
+                        pusherConfig: PUSHER_CONFIG,
+                      });
+                    });
+                  }}
+                >
+                  <View style={styles.iconBox}>
+                    <Ionicons name="mic-outline" size={28} color="#6a1b9a" />
+                    <Text style={styles.iconText}>One-Way Audio</Text>
+                  </View>
+                </TouchableOpacity>
               </View>
             </View>
           </View>
@@ -408,8 +500,17 @@ const HomeScreen = () => {
             <View style={styles.modalHandle} />
             <Text style={styles.modalTitle}>Select Device</Text>
             <FlatList
-              data={user?.children}
-              keyExtractor={(item) => item?.id?.toString()}
+              data={children}
+              keyExtractor={(item, index) => String(item?.id ?? item?.child?.id ?? index)}
+              ListEmptyComponent={
+                userLoading || childrenLoading ? (
+                  <ActivityIndicator style={{ marginVertical: 24 }} size="large" color="#6a1b9a" />
+                ) : (
+                  <TouchableOpacity onPress={() => (user?.familyId ? fetchChildren(user.familyId) : getuserData())} style={{ paddingVertical: 24, alignItems: 'center' }}>
+                    <Text style={styles.smallText}>No devices found. Tap to retry.</Text>
+                  </TouchableOpacity>
+                )
+              }
               renderItem={({ item }) => (
                 <TouchableOpacity
                   style={[styles.deviceItem, selectedChild === item.child?.trackId && styles.deviceItemActive]}

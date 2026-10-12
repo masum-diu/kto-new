@@ -274,7 +274,7 @@ const LocationScreen = () => {
           horizontal
           showsHorizontalScrollIndicator={false}
           data={user?.children}
-          keyExtractor={(item) => item?.id?.toString()}
+          keyExtractor={(item, index) => String(item?.id ?? index)}
           renderItem={({ item }) => (
             <TouchableOpacity
               style={[

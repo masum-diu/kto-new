@@ -1,6 +1,6 @@
 import { useNavigation, useRoute } from "@react-navigation/native";
 import React, { useState, useEffect } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, Switch } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, Switch, Alert } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import instance from "../../api/api_instance";
@@ -10,6 +10,7 @@ export default function Appblocking() {
   const navigation = useNavigation();
   const route = useRoute();
   const trackId = route.params?.trackId;
+  const [deviceTrackId, setDeviceTrackId] = useState(route.params?.deviceTrackId);
   const [policy, setPolicy] = useState(null);
   const [blockedApps, setBlockedApps] = useState([]);
   console.log(blockedApps)
@@ -26,9 +27,14 @@ export default function Appblocking() {
         });
         const data = res?.data?.data;
         setPolicy(data);
-        setBlockedApps(data?.
-policy
-?.blocked_apps || []);
+        // Entry points that don't pass the device trackId: take it from the child record.
+        setDeviceTrackId((prev) => prev ?? data?.trackId ?? data?.track_id);
+        let local = null;
+        try {
+          local = JSON.parse(await AsyncStorage.getItem(`policy:${trackId}`));
+        } catch (e) {}
+        // The local copy reflects the user's latest save, so prefer it over a possibly stale server value.
+        setBlockedApps(local?.blockedApps ?? data?.policy?.blocked_apps ?? []);
       } catch (e) {
         console.log(e);
       } finally {
@@ -47,14 +53,34 @@ policy
     try {
       setSaving(true);
       const token = await AsyncStorage.getItem('accessToken');
-      await instance.patch(`/children/${trackId}`, {
-        blocked_apps: updated,
+      // Same endpoint/payload Home's Screen Time modal uses to save the policy.
+      // Send the same fields Home's Screen Time modal sends, so server validation sees a full policy.
+      const dailyLimit = policy?.policy?.daily_limit_minutes ?? policy?.daily_limit_minutes ?? null;
+      const res = await instance.post('/policies', {
+        trackId: deviceTrackId,
+        dailyLimitMinutes: dailyLimit,
+        blockedApps: updated,
       }, {
         headers: { Authorization: `Bearer ${token}` },
       });
+      console.log('[policies] saved', res?.status, JSON.stringify(res?.data), 'sent', JSON.stringify(updated), 'trackId', deviceTrackId);
+      // Keep the local copy (shared with Home's Screen Time modal) in sync.
+      let local = {};
+      try {
+        local = JSON.parse(await AsyncStorage.getItem(`policy:${trackId}`)) || {};
+      } catch (e) {}
+      AsyncStorage.setItem(`policy:${trackId}`, JSON.stringify({ ...local, blockedApps: updated })).catch(() => {});
     } catch (e) {
       setBlockedApps(blockedApps);
-      console.log(e);
+      const body = e?.response?.data;
+      const details = body?.errors ?? body?.error ?? body?.details;
+      const msg = [
+        body?.message || e?.message || 'Could not update app blocking',
+        details ? (typeof details === 'string' ? details : JSON.stringify(details)) : null,
+        `trackId: ${deviceTrackId}`,
+      ].filter(Boolean).join('\n');
+      console.log('[policies] failed', e?.response?.status, e?.response?.data || e?.message);
+      Alert.alert('Update failed', String(msg));
     } finally {
       setSaving(false);
     }
@@ -101,7 +127,7 @@ policy
             )}
           </View>
 
-          {/* Extra policy info */}
+          {/* Extra policy info
           {policy && (
             <View style={styles.card}>
               <Text style={styles.cardTitle}>Screen Controls</Text>
@@ -117,6 +143,7 @@ policy
               </View>
             </View>
           )}
+          */}
         </ScrollView>
       )}
     </SafeAreaView>

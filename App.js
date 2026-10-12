@@ -28,7 +28,10 @@ import Appblocking from "./screens/settingscreen/appblocking";
 import ConnectedDevice from "./screens/settingscreen/connectedDevice";
 import DeviceDetails from "./screens/settingscreen/deviceDetails";
 import UpgradeMembership from "./screens/MembershipScreen/UpgradeMembership";
-
+import AboutUs from "./screens/settingscreen/AboutUs";
+import Help from "./screens/settingscreen/Help";
+import Feedback from "./screens/settingscreen/Feedback";
+import Language from "./screens/settingscreen/Language";
 const Stack = createNativeStackNavigator();
 
 function Navigator() {
@@ -102,6 +105,10 @@ function Navigator() {
             <Stack.Screen name="MyProfile" component={MyProfile} />
             <Stack.Screen name="CircleCode" component={CircleCode} />
             <Stack.Screen name="UpgradeMembership" component={UpgradeMembership} />
+            <Stack.Screen name="AboutUs" component={AboutUs} />
+            <Stack.Screen name="Help" component={Help} />
+            <Stack.Screen name="Feedback" component={Feedback} />
+            <Stack.Screen name="Language" component={Language} />
           </>
         ) : (
           <>

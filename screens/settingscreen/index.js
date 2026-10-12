@@ -8,6 +8,8 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import { useFocusEffect } from "@react-navigation/native";
 
+const USER_CACHE_KEY = "cachedUser";
+
 const SettingsScreen = () => {
     const navigation = useNavigation();
     const { logout } = useAuth();
@@ -18,23 +20,22 @@ const SettingsScreen = () => {
     const handleLogout = async () => {
         await logout();
     };
+    const applyUser = (data) => {
+        setFamilyId(data?.familyId);
+        setUser(data);
+    };
     const getUser = async () => {
         try {
-            setLoading(true);
-            const storedToken = await AsyncStorage.getItem('accessToken');
-            const response = await instance.get('/users/me', {
-                headers: {
-                    Authorization: `Bearer ${storedToken}`,
-                    "Content-Type": "application/json",
-
-                },
-            });
-
-            setFamilyId(response?.data?.data?.familyId);
-            setUser(response?.data?.data);
-            setLoading(false);
+            const response = await instance.get('/users/me');
+            const data = response?.data?.data;
+            if (data) {
+                applyUser(data);
+                AsyncStorage.setItem(USER_CACHE_KEY, JSON.stringify(data)).catch(() => {});
+            }
         } catch (error) {
-            //   console.error('User Retrieval Error:', error.response ? error.response.data : error.message);
+            console.log('[users/me] failed', error?.code, error?.response?.status, error?.message);
+        } finally {
+            setLoading(false);
         }
     };
     useFocusEffect(
@@ -98,7 +99,7 @@ const SettingsScreen = () => {
                         </View>
                         <Ionicons name="chevron-forward" size={18} color="#ccc" />
                     </TouchableOpacity>
-                    <TouchableOpacity style={styles.optionCard} onPress={() => navigation.navigate("Membership")}>
+                    <TouchableOpacity style={styles.optionCard} onPress={() => navigation.navigate("MainHome", { screen: "Membership" })}>
                         <View style={styles.optionLeft}>
                             <Ionicons name="card-outline" size={22} color="#6d16a2" />
                             <Text style={styles.optionText}>Membership</Text>
@@ -140,28 +141,28 @@ const SettingsScreen = () => {
                         </View>
                         <Ionicons name="chevron-forward" size={18} color="#ccc" />
                     </TouchableOpacity> */}
-                    <TouchableOpacity style={styles.optionCard}>
+                    <TouchableOpacity style={styles.optionCard} onPress={() => navigation.navigate("Help")}>
                         <View style={styles.optionLeft}>
                             <Ionicons name="help-circle-outline" size={22} color="#6d16a2" />
                             <Text style={styles.optionText}>Help</Text>
                         </View>
                         <Ionicons name="chevron-forward" size={18} color="#ccc" />
                     </TouchableOpacity>
-                    <TouchableOpacity style={styles.optionCard}>
+                    <TouchableOpacity style={styles.optionCard} onPress={() => navigation.navigate("Feedback")}>
                         <View style={styles.optionLeft}>
                             <Ionicons name="chatbox-ellipses-outline" size={22} color="#6d16a2" />
                             <Text style={styles.optionText}>Feedback</Text>
                         </View>
                         <Ionicons name="chevron-forward" size={18} color="#ccc" />
                     </TouchableOpacity>
-                    <TouchableOpacity style={styles.optionCard}>
+                    <TouchableOpacity style={styles.optionCard} onPress={() => navigation.navigate("Language")}>
                         <View style={styles.optionLeft}>
                             <Ionicons name="language-outline" size={22} color="#6d16a2" />
                             <Text style={styles.optionText}>Language</Text>
                         </View>
                         <Ionicons name="chevron-forward" size={18} color="#ccc" />
                     </TouchableOpacity>
-                    <TouchableOpacity style={styles.optionCard}>
+                    <TouchableOpacity style={styles.optionCard} onPress={() => navigation.navigate("AboutUs")}>
                         <View style={styles.optionLeft}>
                             <Ionicons name="information-circle-outline" size={22} color="#6d16a2" />
                             <Text style={styles.optionText}>About us</Text>
