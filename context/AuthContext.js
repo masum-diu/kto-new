@@ -22,6 +22,10 @@ export const AuthProvider = ({ children }) => {
   const logout = async () => {
     await AsyncStorage.removeItem("accessToken");
     await AsyncStorage.removeItem("cachedUser");
+    // Alert poller state belongs to the account that just logged out.
+    await AsyncStorage.removeItem("childTrackIds");
+    await AsyncStorage.removeItem("lastNotifiedAlertId");
+    await AsyncStorage.removeItem("dismissedNotificationKeys");
     setAccessToken(null);
   };
 

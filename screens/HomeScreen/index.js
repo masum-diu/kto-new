@@ -21,6 +21,18 @@ import { CONSENT_KEYS, grantConsent, hasConsent } from "../../utils/disclosureCo
 
 
 const USER_CACHE_KEY = "cachedUser";
+
+// Small list the app-wide alert poller reads, so it never has to parse the full cached user.
+const saveChildTrackIds = (children) => {
+  if (!Array.isArray(children)) return;
+  const list = children
+    .map((item) => ({
+      trackId: item?.child?.trackId,
+      label: item?.child?.name || item?.child?.deviceBrand || "Your child",
+    }))
+    .filter((c) => c.trackId);
+  AsyncStorage.setItem("childTrackIds", JSON.stringify(list)).catch(() => {});
+};
 const USER_STALE_MS = 30 * 1000;
 const POLICY_CACHE_PREFIX = "policy:";
 
@@ -147,6 +159,7 @@ const HomeScreen = () => {
         return;
       }
       setUser(data);
+      saveChildTrackIds(data?.children);
       lastUserFetch.current = Date.now();
       AsyncStorage.setItem(USER_CACHE_KEY, JSON.stringify(data)).catch(() => {});
     } catch (e) {
@@ -200,7 +213,10 @@ const HomeScreen = () => {
       setChildrenLoading(true);
       const res = await instance.get(`/children?familyId=${familyId}`);
       const list = res?.data?.data;
-      if (Array.isArray(list)) setChildList(list);
+      if (Array.isArray(list)) {
+        setChildList(list);
+        saveChildTrackIds(list);
+      }
     } catch (e) {
       console.log('[children list] failed', e?.code, e?.response?.status, e?.response?.data || e?.message);
     } finally {
@@ -313,7 +329,7 @@ const HomeScreen = () => {
             <View style={styles.card}>
               <Text style={styles.sectionTitle}>Device Activity</Text>
               <View style={styles.iconRow}>
-                <TouchableOpacity style={styles.iconBox} onPress={() => {
+                <TouchableOpacity style={styles.iconCell} onPress={() => {
                   if (!selectedChild) { alert('Select a device first'); return; }
                   setScreenTimeModal(true);
                 }}>
@@ -321,12 +337,32 @@ const HomeScreen = () => {
                   <Text style={styles.iconText}>Screen Time Limits</Text>
                 </TouchableOpacity>
 
-                <TouchableOpacity style={styles.iconBox} onPress={() => {
+                <TouchableOpacity style={styles.iconCell} onPress={() => {
                   if (!selectedChild) { alert('Select a device first'); return; }
                   navigation.navigate("Appblocking", { trackId: selectedChildid, deviceTrackId: selectedChild })
                 }}>
                   <Ionicons name="shield-checkmark-outline" size={28} color="#6a1b9a" />
                   <Text style={styles.iconText}>App Rules</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.iconCell}
+                  onPress={() => {
+                    if (!selectedChild) {
+                      alert("Select a device first");
+                      return;
+                    }
+                    runWithRemoteConsent(() => {
+                      getRootNavigation().navigate("RemoteCameraView", {
+                        selectedChild,
+                        familyId: user?.familyId,
+                        pusherConfig: PUSHER_CONFIG,
+                      });
+                    });
+                  }}
+                >
+                  <Ionicons name="videocam-outline" size={28} color="#6a1b9a" />
+                  <Text style={styles.iconText}>Remote Camera</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -439,13 +475,14 @@ const HomeScreen = () => {
             <View style={styles.card}>
               <Text style={styles.sectionTitle}>Live Monitoring</Text>
               <View style={styles.iconRow}>
-                <TouchableOpacity onPress={() => navigation.navigate("Location")}>
+                <TouchableOpacity style={styles.iconCell} onPress={() => navigation.navigate("Location")}>
                   <View style={styles.iconBox}>
                     <Ionicons name="location-outline" size={28} color="#6a1b9a" />
                     <Text style={styles.iconText}>Location tracking</Text>
                   </View>
                 </TouchableOpacity>
                 <TouchableOpacity
+                  style={styles.iconCell}
                   onPress={() => {
                     if (!selectedChild) {
                       alert("Select a device first");
@@ -467,6 +504,7 @@ const HomeScreen = () => {
                   </View>
                 </TouchableOpacity>
                 <TouchableOpacity
+                  style={styles.iconCell}
                   onPress={() => {
                     if (!selectedChild) {
                       alert("Select a device first");
@@ -660,7 +698,9 @@ const styles = StyleSheet.create({
   smallText: { fontSize: 13, color: "#666", marginBottom: 6 },
   progressBar: { height: 6, backgroundColor: "#ddd", borderRadius: 6, overflow: "hidden" },
   progressFill: { width: "40%", height: "100%", backgroundColor: "#0abab5" },
-  iconRow: { flexDirection: "row", justifyContent: "space-around", marginTop: 8 },
+  // Wrapping 3-column grid: a 4th item starts a new row instead of squeezing the others.
+  iconRow: { flexDirection: "row", flexWrap: "wrap", rowGap: 16, marginTop: 8 },
+  iconCell: { width: "33.33%", alignItems: "center" },
   iconBox: { alignItems: "center", width: 90 },
   iconImg: { width: 28, height: 28 },
   iconText: { fontSize: 12, color: "#333", marginTop: 4, textAlign: "center" },

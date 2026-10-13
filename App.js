@@ -28,7 +28,8 @@ import Appblocking from "./screens/settingscreen/appblocking";
 import ConnectedDevice from "./screens/settingscreen/connectedDevice";
 import DeviceDetails from "./screens/settingscreen/deviceDetails";
 import UpgradeMembership from "./screens/MembershipScreen/UpgradeMembership";
-import AboutUs from "./screens/settingscreen/AboutUs";import Help from "./screens/settingscreen/Help";
+import AboutUs from "./screens/settingscreen/AboutUs";
+import { startNotificationPolling } from "./services/notificationPoller";import Help from "./screens/settingscreen/Help";
 import Feedback from "./screens/settingscreen/Feedback";
 import Language from "./screens/settingscreen/Language";
 const Stack = createNativeStackNavigator();
@@ -73,6 +74,12 @@ function Navigator() {
     return () => {
       if (unsubscribe) unsubscribe();
     };
+  }, [accessToken]);
+
+  // Show new notifications from any screen, not only while the Notifications screen is open.
+  useEffect(() => {
+    if (!accessToken) return;
+    return startNotificationPolling();
   }, [accessToken]);
 
   if (loading) return null;

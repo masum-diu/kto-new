@@ -1,6 +1,6 @@
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image, Platform, PermissionsAndroid, ActivityIndicator } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image, Platform, PermissionsAndroid, ActivityIndicator, Alert } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -8,9 +8,15 @@ import instance from "../../api/api_instance";
 import ProminentDisclosureModal from "../../components/ProminentDisclosureModal";
 import { DISCLOSURE } from "../../constants/disclosureContent";
 import { CONSENT_KEYS, grantConsent, hasConsent } from "../../utils/disclosureConsent";
+import { describeAlert, fetchChildAlerts } from "../../services/notificationPoller";
+
+// The backend has no delete route for notifications, so "delete" hides them on this device.
+const DISMISSED_KEY = "dismissedNotificationKeys";
+const itemKey = (item) => (item?.isAlert ? String(item.id) : `log-${item?.id}`);
 
 export default function Notifications() {
   const navigation = useNavigation();
+  const [dismissed, setDismissed] = useState([]);
   const [notificationLogs, setNotificationLogs] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [highlightedLogId, setHighlightedLogId] = useState(null);
@@ -90,8 +96,9 @@ export default function Notifications() {
     const notifiedLogId = await AsyncStorage.getItem("lastNotifiedLogId");
     if (notifiedLogId === latestLogId) return;
 
-    await showStatusBarNotification(latestLog);
+    // Save first: the app-wide poller (services/notificationPoller.js) shares this id.
     await AsyncStorage.setItem("lastNotifiedLogId", latestLogId);
+    await showStatusBarNotification(latestLog);
   };
 
   const getNotificationLogs = async ({ silent = false } = {}) => {
@@ -114,7 +121,29 @@ export default function Notifications() {
       }
       lastTopLogIdRef.current = latestLogId;
 
-      setNotificationLogs(parsedLogs);
+      // Child alerts (SOS, geofence exit, ...) live on a different endpoint; show them in the same list.
+      let alertItems = [];
+      try {
+        const alerts = await fetchChildAlerts();
+        alertItems = alerts.map((a) => {
+          const { title, body } = describeAlert(a, a.label);
+          return {
+            id: `alert-${a.id}`,
+            title,
+            message: body,
+            createdAt: a.createdAt,
+            isAlert: true,
+            isUrgent: a.type === "SOS",
+          };
+        });
+      } catch (alertError) {
+        console.log("Child alerts fetch error:", alertError);
+      }
+      const merged = [...parsedLogs, ...alertItems].sort(
+        (a, b) => new Date(b?.createdAt || 0).getTime() - new Date(a?.createdAt || 0).getTime()
+      );
+
+      setNotificationLogs(merged);
       await notifyIfNewLog(parsedLogs);
     } catch (error) {
       console.log("Notification logs fetch error:", error);
@@ -145,6 +174,30 @@ export default function Notifications() {
     }, [])
   );
 
+  useEffect(() => {
+    AsyncStorage.getItem(DISMISSED_KEY)
+      .then((raw) => {
+        const list = raw ? JSON.parse(raw) : [];
+        if (Array.isArray(list)) setDismissed(list);
+      })
+      .catch(() => {});
+  }, []);
+
+  const dismiss = (keys) => {
+    const next = [...new Set([...dismissed, ...keys])].slice(-500);
+    setDismissed(next);
+    AsyncStorage.setItem(DISMISSED_KEY, JSON.stringify(next)).catch(() => {});
+  };
+
+  const visibleLogs = notificationLogs.filter((item) => !dismissed.includes(itemKey(item)));
+
+  const confirmClearAll = () => {
+    Alert.alert("Clear all notifications?", "They will be removed from this device.", [
+      { text: "Cancel", style: "cancel" },
+      { text: "Clear all", style: "destructive", onPress: () => dismiss(visibleLogs.map(itemKey)) },
+    ]);
+  };
+
   const getMessageFromLog = (logItem) => logItem?.message || "No message available";
   const getTitleFromLog = (logItem) => logItem?.title || "Notification";
 
@@ -160,7 +213,13 @@ export default function Notifications() {
           />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Notice</Text>
-        <View style={{ width: 24 }} /> {/* Placeholder for alignment */}
+        {visibleLogs.length > 0 ? (
+          <TouchableOpacity onPress={confirmClearAll} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+            <Ionicons name="trash-outline" size={24} color="#8C52FF" />
+          </TouchableOpacity>
+        ) : (
+          <View style={{ width: 24 }} />
+        )}
       </View>
 
       {/* List */}
@@ -170,8 +229,8 @@ export default function Notifications() {
             <ActivityIndicator size="small" color="#8C52FF" />
             <Text style={styles.loaderText}>Loading notifications...</Text>
           </View>
-        ) : notificationLogs.length > 0 ? (
-          notificationLogs.map((logItem, index) => {
+        ) : visibleLogs.length > 0 ? (
+          visibleLogs.map((logItem, index) => {
             const isHighlighted = logItem?.id === highlightedLogId;
             return (
               <TouchableOpacity
@@ -179,8 +238,8 @@ export default function Notifications() {
                 style={[styles.card, isHighlighted && styles.highlightCard]}
                 onPress={() => showStatusBarNotification(logItem)}
               >
-                <View style={styles.iconWrapper}>
-                  <Ionicons name="notifications-outline" size={24} color="#fff" />
+                <View style={[styles.iconWrapper, logItem?.isAlert && { backgroundColor: logItem?.isUrgent ? "#e53935" : "#f59e0b" }]}>
+                  <Ionicons name={logItem?.isAlert ? "warning-outline" : "notifications-outline"} size={24} color="#fff" />
                 </View>
                 <View style={styles.textWrapper}>
                   <Text style={[styles.title, isHighlighted && styles.highlightTitle]}>
@@ -190,12 +249,17 @@ export default function Notifications() {
                     {getMessageFromLog(logItem)}
                   </Text>
                 </View>
-                <Ionicons name="chevron-forward" size={20} color="#ccc" />
+                <TouchableOpacity
+                  onPress={() => dismiss([itemKey(logItem)])}
+                  hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+                >
+                  <Ionicons name="close-circle-outline" size={24} color="#b0a3c9" />
+                </TouchableOpacity>
               </TouchableOpacity>
             );
           })
         ) : (
-          <Text style={styles.emptyText}>No notification logs available.</Text>
+          <Text style={styles.emptyText}>No notifications.</Text>
         )}
       </ScrollView>
 

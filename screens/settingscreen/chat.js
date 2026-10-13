@@ -46,7 +46,8 @@ export default function Chat() {
           />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Messages</Text>
-        <View style={styles.headerPlaceholder} /> {/* Placeholder for alignment */}
+        {/* Placeholder for alignment */}
+        <View style={styles.headerPlaceholder} />
       </View>
 
       {/* List */}
