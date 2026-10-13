@@ -444,8 +444,7 @@ const HomeScreen = () => {
                     <Ionicons name="location-outline" size={28} color="#6a1b9a" />
                     <Text style={styles.iconText}>Location tracking</Text>
                   </View>
-                </TouchableOpacity>
-                <TouchableOpacity
+                </TouchableOpacity>                <TouchableOpacity
                   onPress={() => {
                     if (!selectedChild) {
                       alert("Select a device first");

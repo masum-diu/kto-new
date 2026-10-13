@@ -2,6 +2,7 @@ import {
   RTCPeerConnection,
   RTCIceCandidate,
   RTCSessionDescription,
+  MediaStream,
 } from "react-native-webrtc";
 
 export class ParentWebrtcManager {
@@ -9,7 +10,9 @@ export class ParentWebrtcManager {
     iceServers = [{ urls: "stun:stun.l.google.com:19302" }],
     onIceCandidate,
     onRemoteStream,
+    receiveVideo = true,
   }) {
+    this.receiveVideo = receiveVideo;
     this.iceServers = iceServers;
     this.onIceCandidate = onIceCandidate;
     this.onRemoteStream = onRemoteStream;
@@ -29,10 +32,23 @@ export class ParentWebrtcManager {
       }
     };
     pc.ontrack = (event) => {
-      const remoteStream = event?.streams?.[0];
+      console.log("[WebRTC] ontrack", event?.track?.kind, "streams:", event?.streams?.length ?? 0);
+      let remoteStream = event?.streams?.[0];
+      // Some senders add a track without attaching it to a stream; wrap it so it still plays.
+      if (!remoteStream && event?.track) {
+        if (!this.fallbackStream) this.fallbackStream = new MediaStream();
+        this.fallbackStream.addTrack(event.track);
+        remoteStream = this.fallbackStream;
+      }
       if (remoteStream) {
         this.onRemoteStream?.(remoteStream);
       }
+    };
+    pc.oniceconnectionstatechange = () => {
+      console.log("[WebRTC] iceConnectionState:", pc.iceConnectionState);
+    };
+    pc.onconnectionstatechange = () => {
+      console.log("[WebRTC] connectionState:", pc.connectionState);
     };
     this.peerConnection = pc;
     return pc;
@@ -42,7 +58,7 @@ export class ParentWebrtcManager {
     const pc = this.ensurePeerConnection();
     const offer = await pc.createOffer({
       offerToReceiveAudio: true,
-      offerToReceiveVideo: true,
+      offerToReceiveVideo: this.receiveVideo,
     });
     await pc.setLocalDescription(offer);
     return offer;
@@ -78,6 +94,9 @@ export class ParentWebrtcManager {
     if (this.peerConnection) {
       this.peerConnection.onicecandidate = null;
       this.peerConnection.ontrack = null;
+      this.peerConnection.oniceconnectionstatechange = null;
+      this.peerConnection.onconnectionstatechange = null;
+      this.fallbackStream = null;
       this.peerConnection.close();
       this.peerConnection = null;
     }

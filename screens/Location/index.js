@@ -90,14 +90,31 @@ const LocationScreen = () => {
     }
   };
 
+  // Picks the most recent record by timestamp instead of trusting API ordering -
+  // some history endpoints return oldest-first, which would otherwise pin the
+  // map to the very first ever recorded (often far-away) location forever.
+  const pickLatestLocation = (locationlist) => {
+    if (!locationlist || locationlist.length === 0) return null;
+    const getTs = (item) =>
+      Number(
+        item?.capturedAtMs ??
+          item?.capturedAt ??
+          item?.timestampMs ??
+          item?.createdAtMs ??
+          (item?.createdAt ? Date.parse(item.createdAt) : NaN) ??
+          (item?.updatedAt ? Date.parse(item.updatedAt) : NaN)
+      ) || 0;
+    return locationlist.reduce((latest, item) => (getTs(item) > getTs(latest) ? item : latest), locationlist[0]);
+  };
+
   // Fetch child location history
   const locatonlist = async (trackId) => {
     try {
       const res = await instance.get(`/locations/${trackId}/history?page=1&limit=10`);
       console.log("locatonlist response:", JSON.stringify(res.data));
       const locationlist = res?.data?.data?.locations;
-      if (locationlist && locationlist.length > 0) {
-        const latestLocation = locationlist[0];
+      const latestLocation = pickLatestLocation(locationlist);
+      if (latestLocation) {
         setChildLocation({
           latitude: Number(latestLocation.latitude),
           longitude: Number(latestLocation.longitude),
@@ -129,10 +146,18 @@ const LocationScreen = () => {
   };
 
   const getCurrentLocation = () => {
+    setErrorMsg(null);
+    // Try GPS first (works on emulators with a mock fix); fall back to network location.
     Geolocation.getCurrentPosition(
       (position) => setLocation(position.coords),
-      (error) => setErrorMsg(error.message),
-      { enableHighAccuracy: false, timeout: 30000, maximumAge: 10000 }
+      () => {
+        Geolocation.getCurrentPosition(
+          (position) => setLocation(position.coords),
+          (error) => setErrorMsg(error.message),
+          { enableHighAccuracy: false, timeout: 20000, maximumAge: 60000 }
+        );
+      },
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000 }
     );
   };
 
