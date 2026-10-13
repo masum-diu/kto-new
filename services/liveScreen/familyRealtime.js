@@ -42,12 +42,36 @@ export const createFamilyRealtime = ({
     cluster: pusherConfig.cluster,
     forceTLS: true,
   });
-  const channels = channelNames.map((name) => ({
-    name,
-    channel: pusher.subscribe(name),
-  }));
+  pusher.connection.bind("state_change", (states) => {
+    console.log("[Realtime] connection", states?.previous, "->", states?.current);
+  });
+  pusher.connection.bind("error", (err) => {
+    console.log("[Realtime] connection error", err?.error?.data?.message || err?.message || err);
+  });
+  // Resolves once a channel is subscribed (or after a timeout), so callers can wait before
+  // starting a session; events published before subscribing would otherwise be missed.
+  let resolveReady;
+  const ready = new Promise((resolve) => {
+    resolveReady = resolve;
+  });
+  const readyTimer = setTimeout(() => resolveReady(false), 8000);
+
+  const channels = channelNames.map((name) => {
+    const channel = pusher.subscribe(name);
+    channel.bind("pusher:subscription_succeeded", () => {
+      console.log("[Realtime] subscribed", name);
+      clearTimeout(readyTimer);
+      resolveReady(true);
+    });
+    channel.bind("pusher:subscription_error", (status) =>
+      console.log("[Realtime] subscription error", name, status)
+    );
+    return { name, channel };
+  });
 
   const signalHandler = (payload) => {
+    const data = payload?.data?.signal || payload?.signal || payload?.data || payload || {};
+    console.log("[Realtime] signal", data?.signalType, "from", data?.senderType, "session", data?.sessionId);
     onSignal?.(payload);
   };
   const stoppedHandler = (payload) => {
@@ -63,7 +87,9 @@ export const createFamilyRealtime = ({
 
   return {
     channelNames,
+    ready,
     unsubscribe: () => {
+      clearTimeout(readyTimer);
       try {
         channels.forEach(({ name, channel }) => {
           channel.unbind("webrtc-signal", signalHandler);

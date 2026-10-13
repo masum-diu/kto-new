@@ -165,7 +165,10 @@ export default function OneWayAudio({ route }) {
             }
           }
           pendingCandidatesRef.current = [];
-          setStatusMessage("Connected to the device. Waiting for audio...");
+          // ontrack can fire while the answer is being applied, i.e. before this line.
+          if (!audioReceivedRef.current) {
+            setStatusMessage("Connected to the device. Waiting for audio...");
+          }
           clearTimeout(audioWaitRef.current);
           audioWaitRef.current = setTimeout(() => {
             if (mountedRef.current && webrtcRef.current && !audioReceivedRef.current) {
@@ -275,6 +278,9 @@ export default function OneWayAudio({ route }) {
         onSignal: handleIncomingSignal,
         onSessionStopped: handleSessionStopped,
       });
+      // Don't ask the child to start until we are listening for its answer.
+      setStatusMessage("Connecting...");
+      await realtimeRef.current.ready;
 
       const requestPayload = {
         accessToken: token,
