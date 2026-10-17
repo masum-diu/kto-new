@@ -1,4 +1,5 @@
 import { useNavigation } from "@react-navigation/native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import React, { useEffect, useState } from "react";
 import { View, Text, Image, TouchableOpacity, StyleSheet, Dimensions, FlatList, Modal, Alert } from "react-native";
 import instance from "../../api/api_instance";
@@ -14,6 +15,7 @@ export default function ScreenMirroring({ route }) {
   const [data, setData] = useState(null);
   // console.log(data)
   const navigation = useNavigation();
+  const insets = useSafeAreaInsets();
   const { selectedChild } = route.params;
   // console.log(selectedChild)
 
@@ -74,7 +76,7 @@ export default function ScreenMirroring({ route }) {
   );
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { paddingTop: insets.top + 12 }]}>
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>

@@ -4,6 +4,7 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import LinearGradient from 'react-native-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import instance from '../../api/api_instance';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const PLAN_DETAILS = {
   BASIC: {
@@ -37,6 +38,7 @@ const PLAN_DETAILS = {
 
 export default function UpgradeMembership() {
   const navigation = useNavigation();
+  const insets = useSafeAreaInsets();
   const route = useRoute();
   const currentPlan = route?.params?.currentPlan || 'BASIC';
   const provider = route?.params?.provider || '';
@@ -148,7 +150,7 @@ export default function UpgradeMembership() {
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
+    <ScrollView contentContainerStyle={[styles.container, { paddingTop: insets.top + 14 }]} showsVerticalScrollIndicator={false}>
       <View style={styles.headerRow}>
         <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()} activeOpacity={0.8}>
           <Image

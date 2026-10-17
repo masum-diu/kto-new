@@ -8,6 +8,7 @@ import {
   View,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { RTCView } from "react-native-webrtc";
@@ -101,6 +102,7 @@ const isAuthError = (error) => {
 
 export default function LiveScreen({ route }) {
   const navigation = useNavigation();
+  const insets = useSafeAreaInsets(); // keeps the header clear of the status bar / camera cutout
   const { selectedChild, familyId, pusherConfig, iceServers } = route.params || {};
   const [liveState, setLiveState] = useState(LIVE_STATE.IDLE);
   const [remoteStream, setRemoteStream] = useState(null);
@@ -531,7 +533,7 @@ export default function LiveScreen({ route }) {
   }, [stopLiveSession]);
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { paddingTop: insets.top + 12 }]}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <Ionicons name="arrow-back" size={24} color="#111" />

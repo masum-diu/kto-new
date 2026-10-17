@@ -8,6 +8,7 @@ import {
   View,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
@@ -45,6 +46,7 @@ const STATE = {
 
 export default function OneWayAudio({ route }) {
   const navigation = useNavigation();
+  const insets = useSafeAreaInsets();
   const { selectedChild, familyId, pusherConfig, iceServers } = route.params || {};
   const [state, setState] = useState(STATE.IDLE);
   const [statusMessage, setStatusMessage] = useState("Tap Start Listening to begin.");
@@ -394,7 +396,7 @@ export default function OneWayAudio({ route }) {
   const live = state === STATE.CONNECTED;
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { paddingTop: insets.top + 12 }]}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <Ionicons name="arrow-back" size={24} color="#111" />
